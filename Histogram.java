@@ -45,7 +45,7 @@ public class Histogram extends ApplicationFrame {
 		    chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
 		    setContentPane(chartPanel);
 	   }
-	   
+	   //TODO: need proper javadoc for all these constructors
 	   public Histogram(BufferedImage img){
 		    super("histogram");
 		    BufferedImage image = img;
@@ -58,8 +58,8 @@ public class Histogram extends ApplicationFrame {
 		   	   
 	   }
 	   
-	   public Histogram(BufferedImage img, String dset){
-		    super("histogram");
+	   public Histogram(final String title, BufferedImage img, String dset){
+		    super(title);
 		    BufferedImage image = img;
 		    IntervalXYDataset dataset = createVertDataset(image);
 		    if(dset == "horizontal"){
@@ -116,13 +116,13 @@ public class Histogram extends ApplicationFrame {
 	   **/
 	 private IntervalXYDataset createHoriDataset(BufferedImage image){
 		 BufferedImage img = image;
-		 
+
 		 int[] width = new int[img.getWidth()];
-		 int total = img.getWidth()*255;
+		 int total = img.getHeight()*255;
 		 int sum = 0;
 
-		 //from top row to bottom row
-		 for(int x = img.getWidth()-1; x>0; x--){
+		 //from first row to bottom row
+		 for(int x = 0; x < img.getWidth()-1; x++){
 			 for(int y=0; y<img.getHeight()-1; y++){
 				 //get pixel value and add into sum
 				 sum += (img.getRGB(x, y)  & 0x00ff0000 )>> 16;
@@ -198,42 +198,53 @@ public class Histogram extends ApplicationFrame {
 	 
 	 /**
 	  * <p> BandCoords is used to calculate the sides of a possible plate location by having a clipping range between a chose peak </p>
-	  * @param arr	The vertical projection accumulate values produced from VertDataset
+	  * @param yValues	The vertical projection accumulate values produced from VertDataset
 	  * @param threshold	The threshold value to determine where to find the Band's sides
 	  * @return	returns a Coordinate type with its X as Yb0 of a band and its Y as Yb1 of a band
 	  */
-	 public Coordinates getBandCoords(int[] arr, double threshold){
-		 Coordinates Peak_coord = getPeakCoord(arr);
+	 public Coordinates getBandCoords(int[] yValues, double threshold){
+		 Coordinates Peak_coord = getPeakCoord(yValues);
 		 Coordinates band_coord;
 		 int Yb0_value = 0;
-		 int Yb1_value = arr[Peak_coord.getY()];
+		 int Yb1_value = yValues[Peak_coord.getY()];
 		 int Yb0 = 0;
 		 int Yb1 = 0;
 		 
 		 //find for Yb0 value, and get its Y coordinate
-		 for(int y = 0; y<Peak_coord.getY(); y++){
-			 if(arr[y] <= threshold*arr[Peak_coord.getY()]){
-				 if (arr[y] > Yb0_value){
-					 Yb0_value = arr[y];
-					 Yb0 = y;
+		 for(int y = Peak_coord.getY(); y>0; y--){
+			 if(yValues[y] < threshold*yValues[Peak_coord.getY()]){
+				 
+					 Yb0_value = yValues[y];
+					 Yb0 = Math.max(0, y);
 					 System.out.println("Y value is " + Yb0_value + ", Yb0 is " + Yb0);
-				 }
+					 break;
 			 }
+			 
 		 }
 		 
 		 //find for Yb1 value, and get its Y coordinate
-		 for(int y = Peak_coord.getY(); y<arr.length; y++){
-			 if(arr[y] <= threshold*arr[Peak_coord.getY()] ){
-				 if (arr[y] < Yb1_value){
-					 Yb1_value = arr[y];
-					 Yb1 = y;
+		 for(int y = Peak_coord.getY(); y<yValues.length; y++){
+			 if(yValues[y] < threshold*yValues[Peak_coord.getY()] ){
+					 Yb1_value = yValues[y];
+					 Yb1 = Math.min(yValues.length, y);
 					 System.out.println("Y value is " + Yb1_value + ", Yb1 is " + Yb1);
-					 
-				 }
+					 break;
+
 			 }
 		 }
 		 
 		 band_coord = new Coordinates(Yb0, Yb1);
+		 
+		 int diff = band_coord.getY() - band_coord.getX();
+		 int NewYb0 = Math.max(0, band_coord.getX() - (int) (0.2*diff));
+		 int NewYb1 = Math.min(yValues.length, band_coord.getY() + (int) (0.2*diff));
+		 
+		 System.out.println("Diff is: " + diff);
+		 System.out.println("NewYb0 is " + NewYb0);
+		 System.out.println("NewYb1 is " + NewYb1);
+		 band_coord = new Coordinates(NewYb0, NewYb1);
+		 
+		 //TODO: Band Coords may be -ve
 		 return band_coord;
 	 }
 	 

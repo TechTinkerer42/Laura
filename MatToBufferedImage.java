@@ -1,4 +1,6 @@
+package examples;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -6,9 +8,11 @@ import java.io.InputStream;
 import javax.imageio.ImageIO;
 
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.highgui.Highgui;
+
 
 
 public class MatToBufferedImage {
@@ -50,6 +54,7 @@ public class MatToBufferedImage {
                 img = ImageIO.read(in);
                 return img;
         }
+       
         
         public BufferedImage getImage(String filename, Mat mat) throws IOException{
                 SetImage(mat);
@@ -61,6 +66,15 @@ public class MatToBufferedImage {
                 img = ImageIO.read(in);
                 return img;
         }
+        
+    	public Mat getMatFromImage(BufferedImage img, int mattype){
+    		Mat mat = new Mat();
+    		byte[] data = ((DataBufferByte)img.getRaster().getDataBuffer()).getData();
+    		mat.put(0, 0, data);
+    		mat.convertTo(mat, mattype);
+    		
+    		return mat;
+    	}
         
 
 }
