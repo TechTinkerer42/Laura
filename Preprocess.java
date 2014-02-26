@@ -1,29 +1,14 @@
 package examples;
 
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-
-import javax.swing.JFrame;
-import javax.swing.JPanel;
+import java.util.Iterator;
+import java.util.Vector;
 
 import org.jfree.ui.RefineryUtilities;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.Range;
-import org.opencv.core.Size;
-import org.opencv.highgui.Highgui;
-import org.opencv.imgproc.Imgproc;
-
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint;
-import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.RotatedRect;
 import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
@@ -31,124 +16,181 @@ import org.opencv.imgproc.Imgproc;
 public class Preprocess extends Snapshot{
 	
 	private static BufferedImage img;
-	private MatToBufferedImage conv = new MatToBufferedImage();
+	private static String filename = "test_056";
+	private static String extension = ".JPG";
+	private static int numberofcandidates = 3;
+	private static Vector<Mat> bands = new Vector<Mat>();
 	
-//	public Preprocess(BufferedImage img){
-//		this.img = getImage();
-//		this.mat = getMatFromImage(this.img);
-//	}
-
 	
 	public static void main(String[] args) throws IOException {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-		
-		Mat m = Highgui.imread("test_039.JPG");
-		System.out.println("width: " + m.width() + "height: " + m.height());
-		
-		/**
-		 * Vertical Projection
-		 */
-		Mat bw = new Mat(m.width(), m.height(), CvType.CV_64FC2);
-		Imgproc.cvtColor(m, bw, Imgproc.COLOR_RGB2GRAY);
-		Mat vertEdges = new Mat(m.width(), m.height(), CvType.CV_64FC2);
-		Mat morphelem = new Mat(m.width(), m.height(), CvType.CV_64FC2);
-		Mat threshold = new Mat(m.width(), m.height(), CvType.CV_8UC1);
-		//Imgproc.equalizeHist(m, EQ);
-		Imgproc.Sobel(bw, threshold, m.depth(), 1, 0);
-		Imgproc.GaussianBlur(threshold, threshold, new Size(5,5), 0);
-		Imgproc.threshold(threshold, threshold, 150, 255, Imgproc.THRESH_OTSU + Imgproc.THRESH_BINARY);
-		
-		morphelem = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(5,5));
-		Imgproc.morphologyEx(threshold, vertEdges, 3, morphelem);
-	
-
-		
-		
-		/**
-		 * 
-		 * 
-		 * here onwards are for displaying images only
-		 */
 		MatToBufferedImage conv = new MatToBufferedImage();
-		//change Mat here only.
-		img = conv.getImage(vertEdges);
-		img = getScaledImage(img, img.getWidth(), img.getHeight());
-		SetImage(img);
-		ViewImage("Pre-processed");
 		
-		Histogram demo = new Histogram("Vertical Projection Histogram", img);
-		int[] img_arr = demo.getImgArr();//get image array to retrieve peak and its side band coords;
-		Coordinates peak_coord = demo.getPeakCoord(img_arr);
-		Coordinates band_coord = demo.getBandCoords(img_arr, 0.55);
-		System.out.println("Peak coord: " + peak_coord.toString());
-		System.out.println("band coord: " + band_coord.toString());
-		demo.pack();
-		RefineryUtilities.centerFrameOnScreen(demo);
-		demo.setVisible(true);	//show vertical projection histogram
+		Mat source = Highgui.imread(filename + extension);
+		Mat processed = new Mat(source.width(), source.height(), CvType.CV_64FC2);
+		Coordinates[] ycoords = new Coordinates[2];//0 is ypeak, 1 is yband
+		Coordinates[] xcoords = new Coordinates[2];//0 is xpeak, 1 is xband
+		//System.out.println("width: " + m.width() + "height: " + m.height());	//debugging purposes
+
+		//Preprocess image
+		Process(source, processed, 150, "vertical");
+		img = conv.getImage(processed);
+		displayImage(source, new Coordinates(0, source.width()), new Coordinates(0, source.height()), "Original Image");
 		
-		//get Band image to produce vertical projection
-		BufferedImage vert_img = conv.getImage(m);
-		BufferedImage crop_img = getCropImage(vert_img, 0, vert_img.getWidth(), band_coord.getX(), band_coord.getY());
-		SetImage(crop_img);
-		ViewImage("Vertical Projection");
+		//Vertical Projection histogram & Image
+		ycoords = displayHistogram(img, "Vertical Projection Histogram", "vertical", 0.55);
+		displayImage(source, new Coordinates(0, source.width()), ycoords[1], "vertical projection 0th");
+		Mat band = source.submat(ycoords[1].getX(), ycoords[1].getY(), 0, source.width());
+		bands.add(band);
 		
 		
-		/**
-		 * Horizontal Projection
-		 */
+		//produce more possible plates
+		if(numberofcandidates > 1){
+			for(int i = 1; i < numberofcandidates; i++){
+				Coordinates[] coords = displayHistogram(img, "Vertical Projection Histogram " + i + "th", "vertical", 0.55, i);
+				band = source.submat(coords[1].getX(), coords[1].getY(), 0, source.width());
+				if(bands.add(band)){
+					System.out.println("band added");
+				}
+				displayImage(source, new Coordinates(0, source.width()), coords[1], "vertical projection " + i + "th");
+			}
+		}
 		
-		Mat hori = m.submat(band_coord.getX(), band_coord.getY(), 0, m.width());
+	
+		//Horizontal Projection
+		Mat horizontal;
 		
+		Iterator it = bands.iterator();
 		
-		bw = new Mat();
-		Mat horiEdges = new Mat(hori.width(), hori.height(), CvType.CV_64FC3);
-		morphelem = new Mat(hori.width(), hori.height(), CvType.CV_64FC2);
-		threshold = new Mat(hori.width(), hori.height(), CvType.CV_8UC1);
+		if(it.hasNext()){
+			int count = 1;
+			while(it.hasNext()){
+				horizontal = (Mat) it.next();
+				Process(horizontal, processed, 150, "horizontal");
+				img = conv.getImage(processed);
+				xcoords = displayHistogram(img, "Horizontal Projection " + count + "th" + " Histogram", "horizontal", 0.1);
+				displayImage(horizontal, xcoords[1], new Coordinates(0,horizontal.height()), "horizontal projection " + count + "th");
+				count++;
+			}
+		}else{
+			horizontal = source.submat(ycoords[1].getX(), ycoords[1].getY(), 0, source.width());
+			Process(horizontal, processed, 150, "horizontal");
+			img = conv.getImage(processed);
+			xcoords = displayHistogram(img, "Horizontal Projection Histogram", "horizontal", 0.1);
+			displayImage(horizontal, xcoords[1], new Coordinates(0,horizontal.height()), "horizontal projection");
+		}
+	}
+	
+	private static Mat Process(Mat src, Mat dst, double Threshold, String sobeltype){
+		Mat bw = new Mat(src.width(), src.height(), CvType.CV_64FC2);
+		Imgproc.cvtColor(src, bw, Imgproc.COLOR_RGB2GRAY);
+		Mat morphelem = new Mat(src.width(), src.height(), CvType.CV_64FC2);
+		Mat threshold = new Mat(src.width(), src.height(), CvType.CV_8UC1);
+		if(sobeltype == "vertical"){
+			Imgproc.Sobel(bw, threshold, src.depth(), 1, 0);
+		}else if(sobeltype == "horizontal"){
+			Imgproc.Sobel(bw, threshold, src.depth(), 0, 2);
+		}
+		Imgproc.GaussianBlur(threshold, threshold, new Size(5,5), 0);
+		Imgproc.threshold(threshold, threshold, Threshold, 255, Imgproc.THRESH_OTSU + Imgproc.THRESH_BINARY);
+		morphelem = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(5,5));
+		Imgproc.morphologyEx(threshold, dst, 3, morphelem);
 		
-		Imgproc.cvtColor(hori, bw, Imgproc.COLOR_RGB2GRAY);
-		Imgproc.Sobel(bw, threshold, m.depth(), 0, 2);
-		Imgproc.GaussianBlur(threshold, threshold, new Size(3,3), 0);
-		Imgproc.threshold(threshold, threshold, 150, 255, Imgproc.THRESH_OTSU + Imgproc.THRESH_BINARY);
+		return dst;
+	}
+	
+	private static Coordinates[] displayHistogram(BufferedImage img, String title, String orientation, double bandthreshold){
+		Coordinates[] coords = new Coordinates[2];
+		Histogram hist = new Histogram(title, img, orientation);
+		int[] arr = hist.getImgArr();
+		Coordinates peak_coord = hist.getPeakCoord(arr);
+		Coordinates band_coord;
+		if(orientation == "vertical"){
+			band_coord = hist.getBandCoords(arr, bandthreshold, "vertical");
+		}
+		band_coord = hist.getBandCoords(arr, bandthreshold, "horizontal");
+		if(peak_coord == null || band_coord == null){
+			System.err.println("Error. unable to find peak coordinates or band coordinates");
+		}
+		System.out.println("peak coordinates are: " + peak_coord.toString());
+		System.out.println("band coordinates are: " + band_coord.toString());
+		coords[0] = peak_coord;
+		coords[1] = band_coord;
 		
-		morphelem = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3,3));
-		Imgproc.morphologyEx(threshold, horiEdges, 3, morphelem);
-		BufferedImage banad = conv.getImage(horiEdges);
-		SetImage(banad);
-		ViewImage("Horizontal Projection");
+		hist.pack();
+		RefineryUtilities.centerFrameOnScreen(hist);
+		hist.setVisible(true);
 		
-		/**
-		 * 
-		 * 
-		 * here onwards are for displaying images only
-		 */
+		return coords;
+	}
+	
+	private static Coordinates[] displayHistogram(BufferedImage img, String title, String orientation, double bandthreshold, int newPeak){
+		Coordinates[] coords = new Coordinates[2];
+		Histogram hist = new Histogram(title, img, orientation);
+		int[] arr = hist.getImgArr();
+		for(int i = 0; i < newPeak; i++){
+			Coordinates peak = hist.getPeakCoord(arr);
+			Coordinates band;
+			if(orientation == "vertical"){
+				band = hist.getBandCoords(arr, bandthreshold, "vertical");
+			}
+			band = hist.getBandCoords(arr, bandthreshold, "horizontal");
+			System.out.println("band to be zeroized: " + band.toString());
+			arr = clearPeak(arr, band);
+			System.out.println("band Zeroized");
+		}
+		Coordinates peak_coord = hist.getPeakCoord(arr);
+		Coordinates band_coord;
+		if(orientation == "vertical"){
+			band_coord = hist.getBandCoords(arr, bandthreshold, "vertical");
+		}
+		band_coord = hist.getBandCoords(arr, bandthreshold, "horizontal");
+		if(peak_coord == null || band_coord == null){
+			System.err.println("Error. unable to find peak coordinates or band coordinates");
+		}
+		System.out.println("peak coordinates are: " + peak_coord.toString());
+		System.out.println("band coordinates are: " + band_coord.toString());
+		coords[0] = peak_coord;
+		coords[1] = band_coord;
 		
-		Histogram hori_hist = new Histogram("Horizontal Projection Histogram", banad, "horizontal");
-		int[] hori_imgarr = hori_hist.getImgArr();
-		Coordinates horipeak_coord = hori_hist.getPeakCoord(hori_imgarr);
-		Coordinates horiband_coord = hori_hist.getBandCoords(hori_imgarr, 0.1);
-		System.out.println("Hori_Peak coord: " + horipeak_coord.toString());
-		System.out.println("Hori_band coord: " + horiband_coord.toString());
-		hori_hist.pack();
-		RefineryUtilities.centerFrameOnScreen(hori_hist);
-		hori_hist.setVisible(true);	//show vertical projection histogram
+		hist.pack();
+		RefineryUtilities.centerFrameOnScreen(hist);
+		hist.setVisible(true);
 		
-		//get Band image to produce horizontal projection
-		BufferedImage band = conv.getImage(m);
-		BufferedImage horiband = getCropImage(band, horiband_coord.getX(), horiband_coord.getY(), band_coord.getX(), band_coord.getY());
-		SetImage(horiband);
-		ViewImage("Horizontal Projection");
+		return coords;
+	}
+	
+	private static int[] clearPeak(int[] imgarr, Coordinates band_coord){
+		for(int i = band_coord.getX(); i<band_coord.getY(); i++){
+			imgarr[i] = 0;
+		}
 		
-		
-//		//start from difference between X and Y of band_coord, to Yb1/band_coord's Y coord
-//		BufferedImage image = conv.getImage(m);
-//		image = getScaledImage(image, img.getWidth(), img.getHeight());
-//		LoadImage(image);
-//		//DONE: choice of y_start matters, may need to find a better way to get a more constant value 
-//		ViewImage(0, img.getWidth(), band_coord.getX(), band_coord.getY());	//cropped image
+		return imgarr;
 		
 	}
 	
-
+	
+	private static void displayImage(Mat mat, Coordinates axisX, Coordinates axisY) throws IOException{
+		MatToBufferedImage conv = new MatToBufferedImage();
+		BufferedImage image = conv.getImage(mat);
+		BufferedImage result = getCropImage(image, axisX.getX(), axisX.getY(), axisY.getX(), axisY.getY());
+		System.out.println("image width: " + result.getWidth() + ", image height: " + result.getHeight());
+		
+		SetImage(result);
+		System.out.println(SaveImage(filename) + "result");
+		ViewImage("Possible Plate");
+	}
+	
+	private static void displayImage(Mat mat, Coordinates axisX, Coordinates axisY, String windowcaption) throws IOException{
+		MatToBufferedImage conv = new MatToBufferedImage();
+		BufferedImage image = conv.getImage(mat);
+		BufferedImage result = getCropImage(image, axisX.getX(), axisX.getY(), axisY.getX(), axisY.getY());
+		System.out.println("image width: " + result.getWidth() + ", image height: " + result.getHeight());
+		
+		SetImage(result);
+		System.out.println(SaveImage(filename + "result"));
+		ViewImage(windowcaption);
+	}
 
 
 }

@@ -202,7 +202,7 @@ public class Histogram extends ApplicationFrame {
 	  * @param threshold	The threshold value to determine where to find the Band's sides
 	  * @return	returns a Coordinate type with its X as Yb0 of a band and its Y as Yb1 of a band
 	  */
-	 public Coordinates getBandCoords(int[] yValues, double threshold){
+	 public Coordinates getBandCoords(int[] yValues, double threshold, String orientation){
 		 Coordinates Peak_coord = getPeakCoord(yValues);
 		 Coordinates band_coord;
 		 int Yb0_value = 0;
@@ -219,7 +219,6 @@ public class Histogram extends ApplicationFrame {
 					 System.out.println("Y value is " + Yb0_value + ", Yb0 is " + Yb0);
 					 break;
 			 }
-			 
 		 }
 		 
 		 //find for Yb1 value, and get its Y coordinate
@@ -229,7 +228,6 @@ public class Histogram extends ApplicationFrame {
 					 Yb1 = Math.min(yValues.length, y);
 					 System.out.println("Y value is " + Yb1_value + ", Yb1 is " + Yb1);
 					 break;
-
 			 }
 		 }
 		 
@@ -242,10 +240,32 @@ public class Histogram extends ApplicationFrame {
 		 System.out.println("Diff is: " + diff);
 		 System.out.println("NewYb0 is " + NewYb0);
 		 System.out.println("NewYb1 is " + NewYb1);
-		 band_coord = new Coordinates(NewYb0, NewYb1);
 		 
+		 if(orientation == "vertical"){
+			 while(diff > 50){//highly possible not a band
+				 NewYb1 -= 50;
+				 diff -= 50;
+			 }
+			 band_coord = new Coordinates(NewYb0, NewYb1);
+		 }
 		 //TODO: Band Coords may be -ve
 		 return band_coord;
+	 }
+	 
+	 /**
+	  * Returns an img array with the given range of values set to 0
+	  * 
+	  * @param coord	coordinates of range for image to be set to 0
+	  * @param arr		image array
+	  * @return			image array with the given range value zeroized.
+	  */
+	 public int[] zeroizeInterval(Coordinates coord, int[] arr){
+		for(int i = coord.getX(); i < coord.getY(); i++){
+			arr[i] = 0;
+		} 
+		 
+		return arr;
+		 
 	 }
 	 
 //depereciated, for testing purposes only
