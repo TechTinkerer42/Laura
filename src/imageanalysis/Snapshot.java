@@ -7,6 +7,7 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage; 
 import java.awt.image.DataBufferByte;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
@@ -17,6 +18,7 @@ import javax.swing.JPanel;
 
 import org.opencv.core.Mat;
 import org.opencv.highgui.Highgui;
+import org.opencv.imgproc.Imgproc;
 
 /**
  * Snapshot class
@@ -59,12 +61,12 @@ public class Snapshot {
 	/**
 	 * <p>Loads image available in the class. If none is available, return error.  </p>
 	 * <p>If specific coords are given, a cropped image will be produced </p>
-	 * @param xstart
-	 * @param xend (optional)
-	 * @param ystart
-	 * @param yend (optional)
+	 * @param xstart starting coordinate for x-axis
+	 * @param xend (optional) ending coordinate for x-axis. will be end of image if not provided
+	 * @param ystart starting coordinate for y-axis
+	 * @param yend (optional) ending coordinate for y-axis. Will be end of image if not provided
 	 * 
-	 * @return
+	 * @return	opens the image in a JFrame window
 	 **/
 	public static void ViewImage(String name){
 
@@ -111,9 +113,28 @@ public class Snapshot {
 	}
 	
 	
-	//TODO: do this
-	public void SaveImage(String filename){
+	//DONE: do this
+	/**
+	 * <p> Save image as the given filename at the given savepath.</p>
+	 * @param filename	the file name
+	 * @param savepath  the file path. It is relative to the source code's path
+	 * @return a boolean value to check if ImageIO's write function succeed
+	 * @throws IOException error in sving image with the given image, extension.
+	 */
+//	public static boolean SaveImage(String filename, String savepath) throws IOException{	deleted for wrong logic
+//		File outputfile = new File(savepath + filename + ".jpg");
+//		if(	ImageIO.write(image, "jpg", outputfile))	return true;
+//		
+//		return false;
+//	}
+	
+	public static boolean SaveImage(BufferedImage img, String filename, String savepath)
+			throws FileNotFoundException,IOException{
 		
+		File outputfile = new File(savepath + filename + ".jpg");
+		if(ImageIO.write(img, "jpg", outputfile))	return true;
+		
+		return false;
 	}
 	
 	public Mat getMatFromImage(BufferedImage img){
@@ -124,6 +145,12 @@ public class Snapshot {
 		return mat;
 	}
 	
+	public Mat setMatBW(Mat mat){
+		Mat bw = new Mat();
+		Imgproc.threshold(mat, bw, 130, 255, Imgproc.THRESH_OTSU + Imgproc.THRESH_BINARY);
+		
+		return bw;
+	}
 	
 	/**
 	 * Scales image to a given input size
@@ -188,6 +215,24 @@ public class Snapshot {
 		
 		img = img.getSubimage(xstart, ystart, xend-xstart, yend-ystart);
 		return img;
+	}
+	
+	public static String getImageDetail(BufferedImage img){
+		return "====== Image details  ====== \n" +
+				"image width: " + img.getWidth() +"\n" + 
+				"image height:" + img.getHeight() + "\n" + 
+				"image area: "  + img.getWidth()*img.getHeight() + "\n" +
+				"image ratio: "   + (double) img.getWidth()/(double)img.getHeight() + "\n" + 
+				"===========================\n";
+	}
+	
+	public static String getMatDetail(Mat mat){
+		return "====== Image details  ====== \n" +
+				"image width: " + mat.width() +"\n" + 
+				"image height:" + mat.height() + "\n" + 
+				"image area: "  + mat.width()*mat.height() + "\n" +
+				"image ratio: "   + (double) mat.width()/(double)mat.height() + "\n" + 
+				"===========================\n";
 	}
 
 

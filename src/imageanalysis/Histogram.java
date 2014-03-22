@@ -186,7 +186,7 @@ public class Histogram extends ApplicationFrame {
 		 //loop through array to find for y coordinate
 		 for(int y = 0; y<arr.length; y++)
 			 if(arr[y] == max){
-				 System.out.println("max is " + max + ", YPeak is " + y);
+		//		 System.out.println("max is " + max + ", YPeak is " + y);
 				 YPeak = y;	
 				 Coordinates peak = new Coordinates(0, YPeak);  
 				 return peak;
@@ -216,38 +216,46 @@ public class Histogram extends ApplicationFrame {
 				 
 					 Yb0_value = yValues[y];
 					 Yb0 = Math.max(0, y);
-					 System.out.println("Y value is " + Yb0_value + ", Yb0 is " + Yb0);
+					// System.out.println("Y value is " + Yb0_value + ", Yb0 is " + Yb0);
 					 break;
 			 }
 		 }
 		 
 		 //find for Yb1 value, and get its Y coordinate
 		 for(int y = Peak_coord.getY(); y<yValues.length; y++){
-			 if(yValues[y] < threshold*yValues[Peak_coord.getY()] ){
+			 if(yValues[y] < threshold*yValues[Peak_coord.getY()] ){	
 					 Yb1_value = yValues[y];
 					 Yb1 = Math.min(yValues.length, y);
-					 System.out.println("Y value is " + Yb1_value + ", Yb1 is " + Yb1);
+					// System.out.println("Y value is " + Yb1_value + ", Yb1 is " + Yb1);
 					 break;
 			 }
+			 Yb1 = yValues.length-1;
 		 }
 		 
 		 band_coord = new Coordinates(Yb0, Yb1);
-		 
+		// System.out.println(band_coord.toString());	for debugging purposes
 		 int diff = band_coord.getY() - band_coord.getX();
 		 int NewYb0 = Math.max(0, band_coord.getX() - (int) (0.2*diff));
 		 int NewYb1 = Math.min(yValues.length, band_coord.getY() + (int) (0.2*diff));
 		 
-		 System.out.println("Diff is: " + diff);
-		 System.out.println("NewYb0 is " + NewYb0);
-		 System.out.println("NewYb1 is " + NewYb1);
+		// System.out.println("Diff is: " + diff);
+		// System.out.println("NewYb0 is " + NewYb0);
+		// System.out.println("NewYb1 is " + NewYb1);
 		 
 		 if(orientation == "vertical"){
 			 while(diff > 50){//highly possible not a band
-				 NewYb1 -= 50;
-				 diff -= 50;
+				 if(diff%50 == 0){
+					 NewYb1 -= 50;
+					 diff   -= 50;
+				 }
+				 NewYb1 -= (diff%50);
+				 diff -= (diff%50);
 			 }
-			 band_coord = new Coordinates(NewYb0, NewYb1);
 		 }
+		 
+		 
+		 band_coord = new Coordinates(NewYb0, NewYb1);
+		 
 		 //TODO: Band Coords may be -ve
 		 return band_coord;
 	 }

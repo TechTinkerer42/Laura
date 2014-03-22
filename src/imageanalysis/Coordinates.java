@@ -22,4 +22,7 @@ public class Coordinates {
 		return "X is " + x + ", Y is " + y;
 	}
 	
+	public int getDifference(){
+		return Math.abs(x-y);
+	}
 }
