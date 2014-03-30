@@ -179,6 +179,17 @@ public class Histogram extends ApplicationFrame {
 		 return max;
 	 }
 	 
+	 public int getMinVal(int[] arr){
+		 int min = arr[0];
+		 
+		 for(int i=1; i<arr.length; i++){
+			 if(arr[i] < min){
+				 min = arr[i];
+			 }
+		 }
+		 return min;
+	 }
+	 
 	 public Coordinates getPeakCoord(int[] arr){
 		 int max = getMaxVal(arr);
 		 int YPeak;
@@ -255,7 +266,17 @@ public class Histogram extends ApplicationFrame {
 		 
 		 
 		 band_coord = new Coordinates(NewYb0, NewYb1);
-		 
+//		 if(orientation == "horizontal"){
+//			 int[] xValues = new int[NewYb1-NewYb0];
+//			 //copies band to here to be trimmed again
+//			 int count = 0;
+//			 for(int i = NewYb0; i<=NewYb0; i++){
+//				xValues[count] = yValues[i];
+//				count++;
+//			 }
+//			 
+//			 band_coord = getDerivativeCoords(xValues);
+//		 }
 		 //TODO: Band Coords may be -ve
 		 return band_coord;
 	 }
@@ -275,6 +296,54 @@ public class Histogram extends ApplicationFrame {
 		return arr;
 		 
 	 }
+	 
+	 public Coordinates getDerivativeCoords(int[] yValues){
+
+		//second derivative
+		int[] xValues = getsecondDerivative(yValues, 4);
+		int maxVal = getMaxVal(xValues);
+		int minVal = getMinVal(xValues);
+		System.out.println("maxVal is" + maxVal + ", minVal is " + minVal);
+		int minYb0 = maxVal;
+		int maxYb1 = minVal;
+		int Yb1 = 0;
+		int Yb0 = 0;
+
+		for(int x = 0; x < (xValues.length/2); x++){
+			if(xValues[x] <= minVal*0.2 ){//hard coded 0.2 threshold
+				if(xValues[x] > maxYb1){	
+					maxYb1 = xValues[x];
+					Yb0 = x;
+				}
+			}
+		}
+		
+		for(int x = (xValues.length/2); x < xValues.length; x++){
+			if(xValues[x] >= maxVal*0.2 ){//hard coded 0.2 threshold
+				if(xValues[x] < minYb0){
+					minYb0 = xValues[x];
+					Yb1 = x;
+				}
+			}
+		}
+		Coordinates band_coord = new Coordinates(Yb0, Yb1);
+		return band_coord;
+	}
+
+		 
+
+	public int[] getsecondDerivative(int[] arr, int h){
+		int[] Values = arr;
+		Values[3] = ((Values[3] - Values[Values.length-2])/h);
+		Values[2] = ((Values[2] - Values[Values.length-3])/h);
+		Values[1] = ((Values[1] - Values[Values.length-4])/h);
+		Values[0] = ((Values[0] - Values[Values.length-5])/h);
+		//p2x(x) = (px(x) - px(x-h))/h
+		for(int i = 4; i < Values.length; i++){
+			Values[i] = ((Values[i] - (Values[i-h]))/h);
+		}
+		return Values;
+	}
 	 
 //depereciated, for testing purposes only
 /*	 public static void main(final String[] args) throws IOException {	

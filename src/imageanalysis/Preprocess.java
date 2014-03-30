@@ -19,18 +19,27 @@ public class Preprocess extends Snapshot{
 	
 	private static BufferedImage img;
 	private static String extension = ".jpg";
-	//private static String filename = "test_053";
+	//private static String filename = "car5891";
 	private static final int numberofcandidates = 3;
 	private static final String readfolder = "images/";
 	private static final String savefolder = "images/results/";
 	private static ArrayList<Mat> bands = new ArrayList<Mat>();
 	private static ArrayList<Mat> possibleplates = new ArrayList<Mat>();
+	private static SVMachine svm;
+	
+	private static boolean writerOn = true;
 	private static boolean displayOn = false;
 
-	private static int noplates = 0;
-	private static int gotplates = 0;
+	private static int isplate 	 = 0;
+	private static int notplate  = 0;
+	private static int haveplate = 0;
+	private static int noplate 	 = 0;
 	
 	public static void main(String args[]) throws IOException{
+		svm = new SVMachine();
+		svm.getTrainingfiles(savefolder + "possibleplates/");
+		svm.init();
+		
 		int count = 1;
 		String filename = "test_00" + count;
 		File image = new File(readfolder + filename + ".jpg");
@@ -45,11 +54,22 @@ public class Preprocess extends Snapshot{
 				filename = "test_00" + count;
 			}
 		}
+		svm.close();
+		
+		System.out.println("total successful SVM prediction possible plates " + isplate +  "/" + (isplate+notplate) + 
+				",\n while total unsuccessful SVM prediction possible plates are " + notplate + "/" + (isplate+notplate));
+		System.out.println("\n\n");
 	}
 	
 	
+	
 	public static void run(String filename) throws IOException {
-		//Writer writer = new Writer(savefolder + "/" + filename + "/" + filename + ".txt");	for quick generating log files
+		// svm = new SVMachine();
+		//svm.getTrainingfiles(savefolder + "possibleplates/");
+		//svm.init();
+		
+		Writer writer = new Writer(savefolder + filename + ".txt");
+		if(writerOn)	writer = new Writer(savefolder + "/" + filename + "/" + filename + ".txt");	//for quick generating log files
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 		MatToBufferedImage conv = new MatToBufferedImage();
 		
@@ -57,29 +77,29 @@ public class Preprocess extends Snapshot{
 		double ratios = source.width()/source.height();
 		
 		Imgproc.resize(source, source, new Size(source.width(), source.height()));
-		//Imgproc.resize(source, source, new Size(source.width()*0.5, source.height()*0.5));
+		//Imgproc.resize(source, source, new Size(source.width()*0.2, source.height()*0.2));
 		Mat processed = new Mat(source.width(), source.height(), CvType.CV_64FC2);
 		Coordinates[] ycoords = new Coordinates[2];//0 is ypeak, 1 is yband
 		Coordinates[] xcoords = new Coordinates[2];//0 is xpeak, 1 is xband
 		//System.out.println("width: " + m.width() + "height: " + m.height());	//debugging purposes
 
 		//Preprocess image
-		Process(source, processed, 150, "vertical");
+		vertProcess(source, processed, 150);
 		img = conv.getImage(processed);
-		System.out.println("original image");	//writer.writeln("original image");for quick generating log files
+		System.out.println("original image");	if(writerOn)	if(writerOn)	writer.writeln("original image");//for quick generating log files
 		displayImage(source, new Coordinates(0, source.width()), new Coordinates(0, source.height()), "Original Image", filename);
 		
 
 		
 		//Vertical Projection histogram & Image
-		//writer.writeln("================   VERTICAL PROJECTION  ============");	for quick generating log files
-		//writer.writeln("0");
+		if(writerOn)	writer.writeln("================   VERTICAL PROJECTION  ============");	//for quick generating log files
+		if(writerOn)	writer.writeln("0");
 		System.out.println("================   VERTICAL PROJECTION  ============");
 		System.out.println("0");
 		ycoords = displayHistogram(img, "Vertical Projection Histogram", "vertical", 0.55);
 		displayImage(source, new Coordinates(0, source.width()), ycoords[1], "vertical projection 0th", filename);
 		Mat band = source.submat(ycoords[1].getX(), ycoords[1].getY(), 0, source.width());
-		if(bands.add(band))	System.out.println("band added");//writer.writeln("band added\n\n");
+		if(bands.add(band))	System.out.println("band added");if(writerOn)	writer.writeln("band added\n\n");
 		System.out.print("\n\n");
 		
 		
@@ -90,7 +110,7 @@ public class Preprocess extends Snapshot{
 				Coordinates[] coords = displayHistogram(img, "Vertical Projection Histogram " + i + "th", "vertical", 0.55, i);
 				band = source.submat(coords[1].getX(), coords[1].getY(), 0, source.width());
 				if(bands.add(band)){
-					System.out.println("band added");//writer.writeln("band added \n\n");
+					System.out.println("band added");writer.writeln("band added \n\n");
 				}
 				displayImage(source, new Coordinates(0, source.width()), coords[1], "vertical projection " + i + "th", filename);
 				System.out.print("\n\n");
@@ -106,75 +126,104 @@ public class Preprocess extends Snapshot{
 		
 		if(it.hasNext()){
 			int count = 1;
-			//writer.writeln("================ HORIZONTAL PROJECTION  ===============");
+			if(writerOn)	writer.writeln("================ HORIZONTAL PROJECTION  ===============");
 			System.out.println("================ HORIZONTAL PROJECTION  ===============");
 			while(it.hasNext()){
 				horizontal = (Mat) it.next();
-				Process(horizontal, processed, 150, "horizontal");
+				horiProcess(horizontal, processed, 150);
 				img = conv.getImage(processed);
 				xcoords = displayHistogram(img, "Horizontal Projection " + count + "th" + " Histogram", "horizontal", 0.1);
 				displayImage(horizontal, xcoords[1], new Coordinates(0,horizontal.height()), "horizontal projection " + count + "th", filename);
 				Mat possibleplate = horizontal.submat(0, horizontal.height(), xcoords[1].getX(), xcoords[1].getY());
 				System.out.print(getMatDetail(possibleplate)); 
-				//writer.writeln(getMatDetail(possibleplate));
-				//writer.writeln("The cropped image is " + verifySizes(possibleplate) + " possible plate.\n\n" );
+				if(writerOn)	writer.writeln(getMatDetail(possibleplate));
+				if(writerOn)	writer.writeln("The cropped image is " + verifySizes(possibleplate) + " possible plate.\n\n" );
 				System.out.println("The cropped image is " + verifySizes(possibleplate) + " possible plate" + "\n\n");
 				if(verifySizes(possibleplate))	possibleplates.add(possibleplate);
 				count++;
 			}
 		}else{
 			horizontal = source.submat(ycoords[1].getX(), ycoords[1].getY(), 0, source.width());
-			Process(horizontal, processed, 150, "horizontal");
+			horiProcess(horizontal, processed, 150);
 			img = conv.getImage(processed);
 			xcoords = displayHistogram(img, "Horizontal Projection Histogram", "horizontal", 0.1);
 			displayImage(horizontal, xcoords[1], new Coordinates(0,horizontal.height()), "horizontal projection", filename);
 			Mat possibleplate = horizontal.submat(0, horizontal.height(), xcoords[1].getX(), xcoords[1].getY());
-		//	writer.writeln(getMatDetail(possibleplate));
-		//	writer.writeln("The cropped image is " + verifySizes(possibleplate) + " possible plate.\n\n" );
+			if(writerOn)	writer.writeln(getMatDetail(possibleplate));
+			if(writerOn)	writer.writeln("The cropped image is " + verifySizes(possibleplate) + " possible plate.\n\n" );
 			System.out.print(getMatDetail(possibleplate));
 			System.out.println("The cropped image is " + verifySizes(possibleplate) + " possible plate" + "\n\n");
-			if(verifySizes(possibleplate))	possibleplates.add(possibleplate);
+			if(verifySizes(possibleplate)){
+				possibleplates.add(possibleplate);
+			}
 		}
 		
 		if(possibleplates.size() == 0){
-			//writer.writeln("no possible plate found!");
+			if(writerOn)	writer.writeln("no possible plate found!");
 			System.out.println("No possible plate found!\n\n");
-			noplates++;
+			noplate++;
 		}else{
 			for(int i = 0; i<possibleplates.size(); i++){
+				
 					Mat plate = new Mat();
-					possibleplates.get(i).assignTo(plate, CvType.CV_32FC3);
-					//System.out.println(possibleplates.get(i).channels());		for debugging purposes
+					possibleplates.get(i).copyTo(plate);
+					//System.out.println(possibleplates.get(i).channels());		//for debugging purposes
 					plate = resizePossiblePlate(plate);
 					possibleplates.set(i, plate);
-					System.out.println("possible plate no " + i+1 + "\n");
+					System.out.println("possible plate no " + (i+1) + "\n");
 					System.out.println(getMatDetail(plate));
+					plate = plate.reshape(1,1);
+					plate.convertTo(plate, CvType.CV_32FC1);
+					System.out.println(plate.toString());
+					
+					System.out.println("Support Vector Machine prediction found : " + svm.predict(plate));
+					if(writerOn)	writer.writeln("Support Vector Machine prediction found : " + svm.predict(plate));
+					if(svm.predict(plate)){
+						System.out.println("Plate found! \n"); if(writerOn) writer.writeln("Plate found! \n");
+						isplate++;
+					}else{
+						notplate++;
+					}
+					
 					displayImage(plate, new Coordinates(0, plate.width()), new Coordinates(0, plate.height()), "possibeplate " + (i+1), filename);
+					
 			}
-			gotplates++;
+			haveplate++;
 		}
-		System.out.println("total successful possible plates are " + gotplates + "/97,\n while no successful possible plates are " + noplates + "/97");
+		System.out.println("total successful captures with possible plates are " + haveplate + "/97,\n while no successful possible plates are " + noplate + "/97");
 		System.out.println("\n\n");
-		//writer.closefile();
+		
+		writer.closefile();
 		bands.clear();
 		possibleplates.clear();
 	}
 	
-	private static Mat Process(Mat src, Mat dst, double Threshold, String sobeltype) throws IOException{
+	private static Mat vertProcess(Mat src, Mat dst, double Threshold) throws IOException{
 		Mat bw = new Mat(src.width(), src.height(), CvType.CV_64FC2);
 		Imgproc.cvtColor(src, bw, Imgproc.COLOR_RGB2GRAY);
 		Mat morphelem = new Mat(src.width(), src.height(), CvType.CV_64FC2);
 		Mat threshold = new Mat(src.width(), src.height(), CvType.CV_8UC1);
-		if(sobeltype == "vertical"){
-			Imgproc.Sobel(bw, threshold, src.depth(), 1, 0);
-		}else if(sobeltype == "horizontal"){
-			Imgproc.Sobel(bw, threshold, src.depth(), 0, 2);
-		}
+		Imgproc.Sobel(bw, threshold, src.depth(), 1, 0);
 		Imgproc.GaussianBlur(threshold, threshold, new Size(5,5), 0);
 		Imgproc.threshold(threshold, threshold, Threshold, 255, Imgproc.THRESH_OTSU + Imgproc.THRESH_BINARY);
 		morphelem = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(5,5));
 		Imgproc.morphologyEx(threshold, dst, 3, morphelem);
-		displayImage(dst, new Coordinates(0, dst.width()), new Coordinates(0, dst.height()));
+		displayImage(dst, new Coordinates(0, dst.width()), new Coordinates(0, dst.height()), "processed picture");
+		
+		return dst;
+	}
+	
+	private static Mat horiProcess(Mat src, Mat dst, double Threshold) throws IOException{
+		Mat bw = new Mat(src.width(), src.height(), CvType.CV_64FC2);
+		Imgproc.cvtColor(src, bw, Imgproc.COLOR_RGB2GRAY);
+		Mat morphelem = new Mat(src.width(), src.height(), CvType.CV_64FC2);
+		Mat threshold = new Mat(src.width(), src.height(), CvType.CV_8UC1);
+		Imgproc.Sobel(bw, threshold, src.depth(), 0, 2);
+		Imgproc.GaussianBlur(threshold, threshold, new Size(5,5), 0);
+		Imgproc.threshold(threshold, threshold, Threshold, 255, Imgproc.THRESH_OTSU + Imgproc.THRESH_BINARY);
+		morphelem = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(5,5));
+		Imgproc.morphologyEx(threshold, dst, 3, morphelem);
+		displayImage(dst, new Coordinates(0, dst.width()), new Coordinates(0, dst.height()), "processed picture");
 		
 		return dst;
 	}
@@ -252,8 +301,14 @@ public class Preprocess extends Snapshot{
 		
 	}
 	
+	private static void displayImage(Mat mat, String windowcaption) throws IOException{
+		MatToBufferedImage conv = new MatToBufferedImage();
+		BufferedImage image = conv.getImage(mat);
+		SetImage(image);
+		if(displayOn)	ViewImage(windowcaption);
+	}
 	
-	private static void displayImage(Mat mat, Coordinates axisX, Coordinates axisY) throws IOException{
+	private static void displayImage(Mat mat, Coordinates axisX, Coordinates axisY,String windowcaption) throws IOException{
 		MatToBufferedImage conv = new MatToBufferedImage();
 		BufferedImage image = conv.getImage(mat);
 		BufferedImage result = getCropImage(image, axisX.getX(), axisX.getY(), axisY.getX(), axisY.getY());
@@ -261,7 +316,7 @@ public class Preprocess extends Snapshot{
 		
 		SetImage(result);
 		//System.out.println(SaveImage(filename + "result"));
-		if(displayOn)		ViewImage("Possible Plate");
+		if(displayOn)		ViewImage(windowcaption);
 	}
 	
 	private static void displayImage(Mat mat, Coordinates axisX, Coordinates axisY, String windowcaption, String filename) throws IOException{
