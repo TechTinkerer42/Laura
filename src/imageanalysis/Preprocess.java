@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Vector;
 
+import javax.imageio.ImageIO;
+
 import org.jfree.ui.RefineryUtilities;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -19,7 +21,7 @@ public class Preprocess extends Snapshot{
 	
 	private static BufferedImage img;
 	private static String extension = ".jpg";
-	//private static String filename = "car5891";
+	//private static String filename = "car7336";
 	private static final int numberofcandidates = 3;
 	private static final String readfolder = "images/";
 	private static final String savefolder = "images/results/";
@@ -27,7 +29,7 @@ public class Preprocess extends Snapshot{
 	private static ArrayList<Mat> possibleplates = new ArrayList<Mat>();
 	private static SVMachine svm;
 	
-	private static boolean writerOn = true;
+	private static boolean writerOn = false;
 	private static boolean displayOn = false;
 
 	private static int isplate 	 = 0;
@@ -61,12 +63,10 @@ public class Preprocess extends Snapshot{
 		System.out.println("\n\n");
 	}
 	
-	
-	
 	public static void run(String filename) throws IOException {
-		// svm = new SVMachine();
-		//svm.getTrainingfiles(savefolder + "possibleplates/");
-		//svm.init();
+		svm = new SVMachine();
+		svm.getTrainingfiles(savefolder + "possibleplates/");
+		svm.init();
 		
 		Writer writer = new Writer(savefolder + filename + ".txt");
 		if(writerOn)	writer = new Writer(savefolder + "/" + filename + "/" + filename + ".txt");	//for quick generating log files
@@ -74,7 +74,6 @@ public class Preprocess extends Snapshot{
 		MatToBufferedImage conv = new MatToBufferedImage();
 		
 		Mat source = Highgui.imread(readfolder + filename + extension);
-		double ratios = source.width()/source.height();
 		
 		Imgproc.resize(source, source, new Size(source.width(), source.height()));
 		//Imgproc.resize(source, source, new Size(source.width()*0.2, source.height()*0.2));
@@ -171,6 +170,7 @@ public class Preprocess extends Snapshot{
 					plate = resizePossiblePlate(plate);
 					possibleplates.set(i, plate);
 					System.out.println("possible plate no " + (i+1) + "\n");
+					displayImage(plate, filename + "possible plate no " + (i+1), true, "plates");
 					System.out.println(getMatDetail(plate));
 					plate = plate.reshape(1,1);
 					plate.convertTo(plate, CvType.CV_32FC1);
@@ -184,13 +184,10 @@ public class Preprocess extends Snapshot{
 					}else{
 						notplate++;
 					}
-					
-					displayImage(plate, new Coordinates(0, plate.width()), new Coordinates(0, plate.height()), "possibeplate " + (i+1), filename);
-					
 			}
 			haveplate++;
 		}
-		System.out.println("total successful captures with possible plates are " + haveplate + "/97,\n while no successful possible plates are " + noplate + "/97");
+		System.out.println("total successful captures with possible plates are " + haveplate + "/ " + (haveplate+noplate) + ",\n while no successful possible plates are " + noplate + "/" + (haveplate+noplate));
 		System.out.println("\n\n");
 		
 		writer.closefile();
@@ -214,16 +211,16 @@ public class Preprocess extends Snapshot{
 	}
 	
 	private static Mat horiProcess(Mat src, Mat dst, double Threshold) throws IOException{
-		Mat bw = new Mat(src.width(), src.height(), CvType.CV_64FC2);
+		Mat bw = new Mat(src.size(), CvType.CV_64FC2);
 		Imgproc.cvtColor(src, bw, Imgproc.COLOR_RGB2GRAY);
-		Mat morphelem = new Mat(src.width(), src.height(), CvType.CV_64FC2);
-		Mat threshold = new Mat(src.width(), src.height(), CvType.CV_8UC1);
+		Mat morphelem = new Mat(src.size(), CvType.CV_64FC2);
+		Mat threshold = new Mat(src.size(), CvType.CV_8UC1);
 		Imgproc.Sobel(bw, threshold, src.depth(), 0, 2);
-		Imgproc.GaussianBlur(threshold, threshold, new Size(5,5), 0);
+		Imgproc.GaussianBlur(bw, threshold, new Size(5,5), 0);
 		Imgproc.threshold(threshold, threshold, Threshold, 255, Imgproc.THRESH_OTSU + Imgproc.THRESH_BINARY);
 		morphelem = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(5,5));
 		Imgproc.morphologyEx(threshold, dst, 3, morphelem);
-		displayImage(dst, new Coordinates(0, dst.width()), new Coordinates(0, dst.height()), "processed picture");
+		//displayImage(dst, new Coordinates(0, dst.width()), new Coordinates(0, dst.height()), "processed picture");
 		
 		return dst;
 	}
@@ -301,11 +298,32 @@ public class Preprocess extends Snapshot{
 		
 	}
 	
-	private static void displayImage(Mat mat, String windowcaption) throws IOException{
+	public static void displayImage(Mat mat, String windowcaption) throws IOException{
 		MatToBufferedImage conv = new MatToBufferedImage();
 		BufferedImage image = conv.getImage(mat);
 		SetImage(image);
 		if(displayOn)	ViewImage(windowcaption);
+	}
+	
+	
+	/**
+	 * <p> displays Mat in a JPanel frame on the screen. Allows quick view of Mat images </p>
+	 * @param mat	The Mat image to be displayed
+	 * @param windowcaption	The frame window caption
+	 * @param savepic	A boolean value. Setting this to true saves the Mat image to the specified savefolder path
+	 * @param filename	If savepic value is true, the file will be saved with this filename
+	 * @throws IOException	To catch exception on unable to save the Mat image.
+	 */
+	public static void displayImage(Mat mat, String windowcaption, boolean savepic, String filename) throws IOException{
+		if(!savepic){
+			displayImage(mat,windowcaption);
+		}else{
+			MatToBufferedImage conv = new MatToBufferedImage();
+			BufferedImage image = conv.getImage(mat);
+			SetImage(image);
+			if(displayOn)	ViewImage(windowcaption);
+			System.out.println("saving image..." + SaveImage(image, windowcaption , savefolder + "/" + filename + "/"));
+		}
 	}
 	
 	private static void displayImage(Mat mat, Coordinates axisX, Coordinates axisY,String windowcaption) throws IOException{
@@ -375,6 +393,29 @@ public class Preprocess extends Snapshot{
 		
 		return grayResult;
 	}
+	
+/**
+ * temporary usage to invert all train images
+ */
+//	private static void invertImage() throws IOException{
+//		MatToBufferedImage conv = new MatToBufferedImage();
+//		File folder = new File(savefolder + "possibleplates/" + "positives/");
+//		
+//		for(File file : folder.listFiles()){
+//			if(!file.isHidden()){
+//				Mat img = Highgui.imread(file.getAbsolutePath());
+//				Core.bitwise_not(img, img);
+//				
+//				displayImage(img,"test");
+//				BufferedImage image = conv.getImage(img);
+//				System.out.println(file.getAbsolutePath());
+//				File outputfile = new File(file.getAbsolutePath());
+//				ImageIO.write(image, "jpg", outputfile);
+//			} 
+//		}
+//		 
+//		
+//	}
 
 
 }

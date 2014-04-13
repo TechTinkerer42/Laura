@@ -264,19 +264,13 @@ public class Histogram extends ApplicationFrame {
 			 }
 		 }
 		 
+//		 }else if(orientation == "horizontal"){
+//			 return gettheCoords(yValues);
+//		 }
+		 
 		 
 		 band_coord = new Coordinates(NewYb0, NewYb1);
-//		 if(orientation == "horizontal"){
-//			 int[] xValues = new int[NewYb1-NewYb0];
-//			 //copies band to here to be trimmed again
-//			 int count = 0;
-//			 for(int i = NewYb0; i<=NewYb0; i++){
-//				xValues[count] = yValues[i];
-//				count++;
-//			 }
-//			 
-//			 band_coord = getDerivativeCoords(xValues);
-//		 }
+
 		 //TODO: Band Coords may be -ve
 		 return band_coord;
 	 }
@@ -329,21 +323,39 @@ public class Histogram extends ApplicationFrame {
 		Coordinates band_coord = new Coordinates(Yb0, Yb1);
 		return band_coord;
 	}
+	 
+	 public Coordinates gettheCoords(int[] yValues){
+		 int a,b;
+	     int maxVal = getMaxVal(yValues);
+	     
+		 for (a=2; -derivation(yValues,a,a+4) < maxVal*0.2 && a < yValues.length-2-2-4; a++);
+	     for (b=yValues.length-1-2; derivation(yValues,b-4,b) < maxVal*0.2 && b>a+2; b--);
+	     
+	     Coordinates band_coord = new Coordinates(a,b);
+	     return band_coord;
+	 }
 
 		 
 
 	public int[] getsecondDerivative(int[] arr, int h){
 		int[] Values = arr;
-		Values[3] = ((Values[3] - Values[Values.length-2])/h);
-		Values[2] = ((Values[2] - Values[Values.length-3])/h);
-		Values[1] = ((Values[1] - Values[Values.length-4])/h);
-		Values[0] = ((Values[0] - Values[Values.length-5])/h);
+//		for(int i=h-1; i>0; i--){
+//			Values[i] = ((Values[i] - Values[Values.length-h+i])/h);
+//		}
+//		Values[3] = ((Values[3] - Values[Values.length-2])/h);
+//		Values[2] = ((Values[2] - Values[Values.length-3])/h);
+//		Values[1] = ((Values[1] - Values[Values.length-4])/h);
+//		Values[0] = ((Values[0] - Values[Values.length-5])/h);
 		//p2x(x) = (px(x) - px(x-h))/h
 		for(int i = 4; i < Values.length; i++){
 			Values[i] = ((Values[i] - (Values[i-h]))/h);
 		}
 		return Values;
 	}
+	
+    public int derivation(int[] Values, int index1, int index2) {
+        return (Values[index1] - Values[index2]);
+    }
 	 
 //depereciated, for testing purposes only
 /*	 public static void main(final String[] args) throws IOException {	

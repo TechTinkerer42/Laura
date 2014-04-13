@@ -95,5 +95,9 @@ public class SVMachine {
 	    System.out.println(svm_trainingdata.toString());
 	    System.out.println(svm_classes.toString());
 	    classifier = new CvSVM(svm_trainingdata, svm_traininglabels, new Mat(), new Mat(), svm_params);
-	};
+	}
+	
+
+	
+	
 }

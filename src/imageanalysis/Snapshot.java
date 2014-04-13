@@ -217,6 +217,29 @@ public class Snapshot {
 		return img;
 	}
 	
+	
+	public static void displayImage(Mat mat, String windowcaption) throws IOException{
+		MatToBufferedImage conv = new MatToBufferedImage();
+		BufferedImage image = conv.getImage(mat);
+		SetImage(image);
+		ViewImage(windowcaption);
+	}
+	
+//	
+//	
+//	public static void displayImage(Mat mat, String windowcaption, boolean savepic) throws IOException{
+//		if(!savepic){
+//			displayImage(mat,windowcaption);
+//		}else{
+//			MatToBufferedImage conv = new MatToBufferedImage();
+//			BufferedImage image = conv.getImage(mat);
+//			SetImage(image);
+//			SaveImage(img, filename, savepath)
+//			ViewImage(windowcaption);
+//		
+//		}
+//	}
+		
 	public static String getImageDetail(BufferedImage img){
 		return "====== Image details  ====== \n" +
 				"image width: " + img.getWidth() +"\n" + 

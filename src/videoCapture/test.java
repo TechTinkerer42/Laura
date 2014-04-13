@@ -2,6 +2,8 @@ package videoCapture;
 
 import java.io.IOException;
 
+import org.opencv.highgui.Highgui;
+
 public class test extends VideoHelper {
 	private static String extension = ".mp4";
 	private static String filename  = "videoviewdemo";
@@ -13,7 +15,7 @@ public class test extends VideoHelper {
 		//vid.view(readfolder + filename + extension, "camera1");
 		//System.out.println("helo");
 		vid.ScreenCap(10, readfolder + filename + extension);
-		
+		 
 		
 	}
 }
