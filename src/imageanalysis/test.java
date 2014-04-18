@@ -35,9 +35,15 @@ public class test extends Snapshot {
 		ArrayList<Mat> contours = new ArrayList<Mat>();
 		ArrayList<Character> characters = new ArrayList<Character>();
 		contours = OCR.SketchContours(src);
+		
 		for(Mat contour : contours){
+			System.out.println("contours " + contour.toString());
 			char character = OCR.GetCharacter(contour);
 			characters.add(character);
+		}
+		
+		for(char character : characters){
+			System.out.print(character);
 		}
 
 	}

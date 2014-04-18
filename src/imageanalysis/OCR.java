@@ -22,7 +22,7 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.ml.CvANN_MLP;
 
 public class OCR extends Snapshot{
-	public static final int numCharacters = 30;//0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z
+	public static final int numCharacters = 22;//0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z
 	public static final char strCharacters[] = {'0','1','2','3','4','5','6','7','8','9',
 												'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'};
 	public static boolean isTrained = false;
@@ -34,11 +34,13 @@ public class OCR extends Snapshot{
 	private static Mat trainingDataf20;
 	private static Mat classes;
 	
-	public static int charSize = 20;
+	public static int charSizeW = 40;
+	public static int charSizeH = 50;
 	
 	public OCR(){
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-		charSize = 20; 
+		charSizeW = 40;
+		charSizeH = 50;
 
 	}
 	
@@ -109,6 +111,7 @@ public class OCR extends Snapshot{
 	 */
 	public static char GetCharacter(Mat contour){
 		Mat feature = features(contour, 15);
+		
 		int character = classify(feature);
 		
 		return strCharacters[character];
@@ -182,7 +185,7 @@ public class OCR extends Snapshot{
 //			e.printStackTrace();
 //		}
 		
-		System.out.println(mhist.get(0,1)[0]);
+		//System.out.println(mhist.get(0,1)[0]);
 		
 		//normailize histogram
 		double minval, maxval;
@@ -233,9 +236,9 @@ public class OCR extends Snapshot{
 		//Low data feature
 		Mat lowData = new Mat();
 		Imgproc.resize(src, lowData, new Size(sizeData, sizeData));
+		System.out.println("verthist cols" + verthist.cols() + ", horihist cols" + horihist.cols());
 		int numofCols = verthist.cols() + horihist.cols() + lowData.cols()*lowData.cols();
 		Mat out = Mat.zeros(1, numofCols, CvType.CV_32F);
-		System.out.println("out size" + out.size());
 		
 		//Assign values to feature
 		int j = 0;
@@ -266,25 +269,33 @@ public class OCR extends Snapshot{
 	}
 	
 	public static void trainANN(){
+	//	System.out.println("trainingDataf15 has like " + trainingDataf15.toString());
+	//	System.out.println("classes has like " + classes.toString());
+		
+		
 		OCR.train(trainingDataf15, classes, 10);
 	}
 	
 	private static void train(Mat TrainData, Mat classes, int nlayers){
-		Mat layerSizes = new Mat(1,3,CvType.CV_32SC1);
-		layerSizes.put(1,0, TrainData.cols());
-		layerSizes.put(1,1, nlayers);
-		layerSizes.put(1,2, numCharacters);
+	
+		Mat layerSizes = new Mat(1,3, CvType.CV_32SC1);
+		System.out.println(" Traindata nofcols " + TrainData.cols());
+		layerSizes.put(0,0, TrainData.cols());
+		layerSizes.put(0,1, nlayers);
+		layerSizes.put(0,2, numCharacters);
 		
-		CvANN_MLP ann = new CvANN_MLP();
+		ann = new CvANN_MLP();
 		ann.create(layerSizes, CvANN_MLP.SIGMOID_SYM, 1, 1);
 		
 		//Preparing trainclasses by creating a mat with n trained data by m classes
 		Mat trainClasses = new Mat();
 		trainClasses.create(TrainData.rows(), numCharacters, CvType.CV_32FC1);
+		//System.out.println("trainClaases of " + trainClasses.toString());
 		for(int i=0; i< trainClasses.rows(); i++){
 			for(int k=0; k < trainClasses.cols(); k++){
 				//If class of data i is same as a k class
-				if(k == classes.get(1, i, classes.get(1, i)) ){
+				//System.out.println("classes get i=" + i + " k = " + k +" " + classes.get(0, i)[0]);
+				if(k == classes.get(i, k)[0] ){
 					trainClasses.put(i,k, 1);
 				}else{
 					trainClasses.put(i,k, 0);
@@ -300,9 +311,11 @@ public class OCR extends Snapshot{
 	}
 	
 	private static int classify(Mat src){
+		Mat img = src;
 		int result = -1;
 		Mat output = new Mat(1, numCharacters, CvType.CV_32FC1);
-		ann.predict(src, output);
+		System.out.println("img " + img.toString() );
+		ann.predict(img, output);
 		Point maxLoc;
 		double maxVal;
 		MinMaxLocResult minmaxlocR = Core.minMaxLoc(output);
@@ -329,7 +342,7 @@ public class OCR extends Snapshot{
 		Imgproc.warpAffine(char_in, warpImage, transform_mat, warpImage.size(), Imgproc.INTER_LINEAR, Imgproc.BORDER_CONSTANT, new Scalar(0));
 		
 		Mat out = new Mat();
-		Imgproc.resize(warpImage, out, new Size(charSize, charSize));
+		Imgproc.resize(warpImage, out, new Size(charSizeW, charSizeH));
 		
 		return out;
 	}
@@ -357,7 +370,6 @@ public class OCR extends Snapshot{
 		}
 		
 		//for each character, get the files and push their features in
-		//for(int i=0; i < numCharacters; i++){
 			for(File file : files ){
 				if(!file.isHidden()){
 					Mat character = Highgui.imread(file.getAbsolutePath(), 0);
@@ -368,28 +380,44 @@ public class OCR extends Snapshot{
 					Mat f20 = features(character, 20);
 					
 					//do i need to convert to 32FC1?
-					System.out.println("f5 size is  " + f5.size());
+					//System.out.println("f5 size is  " + f5.size());
 					trainingDataf5.push_back(f5);
-					System.out.println("f5 push back successful");
+					//System.out.println("f5 push back successful");
 					trainingDataf10.push_back(f10);
-					System.out.println("f10 push back successful");
+					//System.out.println("f10 push back successful");
 					trainingDataf15.push_back(f15);
-					System.out.println("f15 push back successful");
+					//System.out.println("f15 push back successful");
 					trainingDataf20.push_back(f20);
-					System.out.println("f20 push back successful");
+					//System.out.println("f20 push back successful");
 					char c = file.getName().charAt(0);
-					System.out.println("This is for character " + c);
+					//System.out.println("This is for character " + c);
 					//trainingLabels.add(i);
-					System.out.println("traininglabels added");
+				}else{
+					
 				}
 			}
 		//}
-		
-		//puts all label into a mat with numcharacters x noflabels
-		for(int label : trainingLabels){	//please re read this and see if this is correct
-			classes.put(numCharacters, label, 1);
+			
+		for(int i = 0; i< numCharacters; i++){
+			for(int n=0; n<7; n++){
+				trainingLabels.add(i);
+			}
 		}
-		System.out.println("classes :" + classes.toString());
+		classes = new Mat(new Size(numCharacters, trainingLabels.size()), CvType.CV_32FC1);
+		for(int i=0; i < numCharacters; i++){
+			for(int label : trainingLabels){
+				classes.put(i, label, 1);
+				
+			}
+		}
+		
+		
+	//	System.out.println("traning labels " + trainingLabels.size());
+		//puts all label into a mat with numcharacters x noflabels
+		
+		
+		//System.out.println("classes is here " + classes.toString() + "and it is " + classes.empty() + " empty, having " + classes.total() + " of elements");
+		
 		System.out.println("trainingDataf5 :" + trainingDataf5.toString());
 		System.out.println("trainingDataf10 :" + trainingDataf10.toString());
 		System.out.println("trainingDataf15 :" + trainingDataf15.toString());
