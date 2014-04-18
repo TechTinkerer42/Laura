@@ -50,7 +50,7 @@ public class Home extends JFrame{
 	private JTable table;
 	private JTextPane RecResult;
 	private JButton Open;
-	JTextPane pic;
+	JLabel pic;
 	
 	public Home() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -187,7 +187,7 @@ public class Home extends JFrame{
 		Open.setBounds(297, 559, 100, 28);
 		getContentPane().add(Open);
 		
-	pic = new JTextPane();
+	pic = new JLabel();
 		pic.setBounds(10, 126, 381, 366);
 		getContentPane().add(pic);
 	}
@@ -222,11 +222,11 @@ public void setRecResult(){
 	RecResult.setText("");
 }
 
-public void setpic(){
-	
-	Icon icon = null;
-	pic.insertIcon(icon);
-}
+//public void setpic(){
+//	
+//	Icon icon = null;
+//	pic.insertIcon(icon);
+//}
 
 
 /*public String setpath(){

@@ -3,11 +3,12 @@ package GUI;
 
 
 import java.awt.EventQueue;
+import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
+import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -152,7 +153,17 @@ public class Controller {
 		public void actionPerformed(ActionEvent arg0) {
 			
 			String p = urlpath ;
-		 Home.pic.insertIcon(new ImageIcon(urlpath));
+			ImageIcon icon = new ImageIcon(p);
+			Image img = icon.getImage();
+			img = img.getScaledInstance(381, 386, Image.SCALE_DEFAULT);
+			
+			BufferedImage buffimg = new BufferedImage(381, 386, BufferedImage.TYPE_INT_ARGB);
+			
+			Graphics g = buffimg.createGraphics();
+			g.drawImage(img, 0, 0, 381, 386, null);
+			ImageIcon newicon = new ImageIcon(img);
+			
+			Home.pic.setIcon(newicon);
 		}
 		 
 	 }
@@ -334,7 +345,7 @@ public class Controller {
 
 		
 		public void actionPerformed(ActionEvent arg0) {
-		
+			
 			JFileChooser schooser = new JFileChooser();
 			schooser.showSaveDialog(null);
 			 int rVal = schooser.showSaveDialog(null);
