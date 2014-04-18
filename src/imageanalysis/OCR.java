@@ -1,6 +1,7 @@
 package examples;
 
 import java.awt.Rectangle;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.AnnotatedElement;
 import java.util.ArrayList;
@@ -16,28 +17,46 @@ import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
+import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.ml.CvANN_MLP;
 
 public class OCR extends Snapshot{
-	public static final boolean VERTICAL = true;
-	public static final boolean HORIZONTAL = false;
-	public static final int numCharacters = 30;
+	public static final int numCharacters = 30;//0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z
+	public static final char strCharacters[] = {'0','1','2','3','4','5','6','7','8','9',
+												'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'};
 	public static boolean isTrained = false;
 	public static CvANN_MLP ann;
 	
-	public static int charSize;
+	private static Mat trainingDataf5;
+	private static Mat trainingDataf10;
+	private static Mat trainingDataf15;
+	private static Mat trainingDataf20;
+	private static Mat classes;
+	
+	public static int charSize = 20;
 	
 	public OCR(){
-		charSize = 20;
+		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+		charSize = 20; 
+
 	}
 	
-	public static Mat SketchContours(Mat src) throws IOException{
+	/**
+	 * <p> takes a plate clip image and finds contours from it. Returns contours that are verified as plausible characters with pre-defined character
+	 *  sizes. </p>
+	 *  <p> The major risk in this function is that the image threshold value affects the success rate of getting the right contours. </p>
+	 * @param src	The input image
+	 * @return	An arrayList of contours that are plausible characters.
+	 * @throws IOException	returns an exception when image is not able to be displayed with the displayImage function.
+	 */
+	public static ArrayList<Mat> SketchContours(Mat src) throws IOException{
 		Mat img = src;
 		
 		Mat img_threshold = new Mat();
 		Mat img_contours = new Mat();
 		Mat img_morph = new Mat();
+		ArrayList<Mat> characters = new ArrayList<Mat>();
 		
 		//img.convertTo(img, CvType.CV_8UC1);
 		Imgproc.cvtColor(img, img_threshold, Imgproc.COLOR_RGB2GRAY);
@@ -56,19 +75,22 @@ public class OCR extends Snapshot{
 		img_threshold.copyTo(detected);
 		Imgproc.cvtColor(detected, detected, Imgproc.COLOR_GRAY2RGB);
 		
-				Imgproc.drawContours(detected, contours, -1, new Scalar(255,255,0));
+		Imgproc.drawContours(detected, contours, -1, new Scalar(255,255,0));
 				for(MatOfPoint contour : contours){
+					//draws a rectangle around all rectangles contours found
 					Rect box = Imgproc.boundingRect(contour);
 					Core.rectangle(detected, box.tl(), box.br(), new Scalar(0,0,255));
 					
-					Mat characters = new Mat(img_threshold, box);
+					Mat character = new Mat(img_threshold, box);
 					
-					System.out.println("characters w: " + characters.width() + ",characters h:" + characters.height() + characters.toString());
+					System.out.println("characters w: " + character.width() + ",characters h:" + character.height() + character.toString());
 					try {
-						if(verifyplatesize(characters)){
-							characters.convertTo(characters, CvType.CV_32F);
-							characters = preprocessChar(characters);
-							displayImage(characters, "Windowcap");
+						if(verifyplatesize(character)){
+							//all contours found that fits the estimated size of a character will be resized for ANN classification.
+							character.convertTo(character, CvType.CV_32F);
+							character = preprocessChar(character);
+							characters.add(character);
+							displayImage(character, "Windowcap");
 							
 						}
 					} catch (IOException e) {
@@ -77,9 +99,20 @@ public class OCR extends Snapshot{
 					}
 				}
 					
-		return detected;
+		return characters;
+	}
+	
+	/**
+	 * <p> takes in a detected contour, which is a character, and returns the result as a character type. </p>
+	 * <p> The function will only work if the MLP is trained with the given training files. </p>
+	 * @param contour	Takes in a contour Mat, which should be given a set of contours by SketchContours function
+	 */
+	public static char GetCharacter(Mat contour){
+		Mat feature = features(contour, 15);
+		int character = classify(feature);
 		
-		//return detecteds;
+		return strCharacters[character];
+		
 	}
 	
 	
@@ -126,52 +159,100 @@ public class OCR extends Snapshot{
 	 * @param t	true being rows and false being cols
 	 * @return
 	 */
-	private static Mat ProjectedHistogram(Mat img, boolean t){
-		int sz = (t)?img.rows() : img.cols();
-		Mat mhist = new Mat();
-		mhist = Mat.zeros(1, sz, CvType.CV_32F);
+	private static Mat ProjectedVertHistogram(Mat img){
+		int sz = img.cols();
 		
-		for(int j = 0; j < sz; j++){
-			Mat data = (t)?img.row(j) :img.col(j);
-			mhist.put(1, j, (float) Core.countNonZero(data)); 
-			
+		Mat mhist = Mat.ones(1, sz, CvType.CV_32FC1);
+		
+		for(int j=0; j<mhist.height(); j++){
+			for(int i = 0; i<mhist.width(); i++){
+				Mat data = img.col(i);
+				
+				//System.out.println(data.toString());
+				//System.out.println("number non-Zero elements in each row are: " + Core.count(data));
+				float value = Core.countNonZero(data);
+				mhist.put(j, i, value);
+			}
 		}
+
+//		try {
+//			displayImage(mhist, "edited");
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+		
+		System.out.println(mhist.get(0,1)[0]);
+		
 		//normailize histogram
 		double minval, maxval;
 		MinMaxLocResult minmaxlocR = Core.minMaxLoc(mhist);
 		minval = minmaxlocR.minVal;
 		maxval = minmaxlocR.maxVal;
-		if(maxval > 0)			mhist.convertTo(mhist, -1, 1.0f/maxval, 0);
+		if(maxval > 0)	mhist.convertTo(mhist, -1, 1.0f/maxval, 0);
+		
+		return mhist;
+
+	}
+	private static Mat ProjectedHoriHistogram(Mat img){
+		int sz = img.rows();
+		
+		Mat mhist = Mat.ones(1, sz, CvType.CV_32FC1);
+		
+		for(int j=0; j<mhist.height(); j++){
+			for(int i = 0; i<mhist.width(); i++){
+				Mat data = img.row(i);
+				
+				//System.out.println(data.toString());
+				//System.out.println("number non-Zero elements in each row are: " + Core.countNonZero(data));
+				float value = Core.countNonZero(data);
+				mhist.put(j, i, value);
+			}
+		}
+		
+		//System.out.println(mhist.get(0,1)[0]);
+
+		
+		//normailize histogram
+		double minval, maxval;
+		MinMaxLocResult minmaxlocR = Core.minMaxLoc(mhist);
+		minval = minmaxlocR.minVal;
+		maxval = minmaxlocR.maxVal;
+		if(maxval > 0)	mhist.convertTo(mhist, -1, 1.0f/maxval, 0);
 		
 		return mhist;
 	}
 	
 	private static Mat features(Mat src, int sizeData){
+
+		
 		//Histogram features
-		Mat verthist = ProjectedHistogram(src, VERTICAL);
-		Mat horihist = ProjectedHistogram(src, HORIZONTAL);
+		Mat horihist = ProjectedHoriHistogram(src);
+		Mat verthist = ProjectedVertHistogram(src);
 		
 		//Low data feature
 		Mat lowData = new Mat();
 		Imgproc.resize(src, lowData, new Size(sizeData, sizeData));
 		int numofCols = verthist.cols() + horihist.cols() + lowData.cols()*lowData.cols();
 		Mat out = Mat.zeros(1, numofCols, CvType.CV_32F);
+		System.out.println("out size" + out.size());
 		
 		//Assign values to feature
 		int j = 0;
+		
 		for(int i=0; i<verthist.cols(); i++){
-			out.put(1, j, verthist.get(1, i)); 
+			out.put(0, j, verthist.get(0, i)); 
 			j++;
 		}
 		
 		for(int i=0; i<horihist.cols(); i++){
-			out.put(1, j, horihist.get(1, i)); 
+			out.put(0, j, horihist.get(0, i)); 
 			j++;
 		}
 		
 		for(int x=0; x<lowData.cols(); x++){
 			for(int y=0; y<lowData.rows(); y++){
-				out.put(1, j,  lowData.get(x,y));
+				out.put(0, j,  lowData.get(x,y));
 				j++;
 			}
 		}
@@ -184,7 +265,11 @@ public class OCR extends Snapshot{
 		return false;
 	}
 	
-	public void train(Mat TrainData, Mat classes, int nlayers){
+	public static void trainANN(){
+		OCR.train(trainingDataf15, classes, 10);
+	}
+	
+	private static void train(Mat TrainData, Mat classes, int nlayers){
 		Mat layerSizes = new Mat(1,3,CvType.CV_32SC1);
 		layerSizes.put(1,0, TrainData.cols());
 		layerSizes.put(1,1, nlayers);
@@ -214,7 +299,7 @@ public class OCR extends Snapshot{
 		}
 	}
 	
-	public static double classify(Mat src){
+	private static int classify(Mat src){
 		int result = -1;
 		Mat output = new Mat(1, numCharacters, CvType.CV_32FC1);
 		ann.predict(src, output);
@@ -224,7 +309,7 @@ public class OCR extends Snapshot{
 		maxVal = minmaxlocR.maxVal;
 		maxLoc = minmaxlocR.maxLoc;
 		
-		return maxLoc.x;
+		return (int) maxLoc.x;
 		
 	}
 	
@@ -233,20 +318,99 @@ public class OCR extends Snapshot{
 		int h = char_in.rows();
 		int w = char_in.cols();
 		
-		Mat transform_mat = Mat.eye(new Size(2,3), CvType.CV_32F);
+		Mat transform_mat = Mat.eye(new Size(3,2), CvType.CV_32F);
 		int m = Math.max(w, h);
 		
 		transform_mat.put(0, 2, m/2 - w/2);
 		transform_mat.put(1, 2, m/2 - h/2);
 		
 		Mat warpImage = new Mat(new Size(m,m), char_in.type());
-		System.out.println("char_in: " + char_in.toString());
+		//System.out.println("transform_mat: " + transform_mat.toString());
 		Imgproc.warpAffine(char_in, warpImage, transform_mat, warpImage.size(), Imgproc.INTER_LINEAR, Imgproc.BORDER_CONSTANT, new Scalar(0));
 		
 		Mat out = new Mat();
-		Imgproc.resize(warpImage, out, new Size(charSize, charSize)) ;
+		Imgproc.resize(warpImage, out, new Size(charSize, charSize));
 		
 		return out;
+	}
+	
+	/**
+	 * Get training data files from the folder and load it onto a Mat
+	 * @param filepath	The given path to the folder with all training characters
+	 * @throws IOException 
+	 */
+	public static void getTrainingFiles(String filepath) throws IOException{
+		classes = new Mat();
+		//4 classes of training labels with 5x5, 10x10, 15x15, and 20x20
+		trainingDataf5 = new Mat();
+		trainingDataf10 = new Mat();
+		trainingDataf15 = new Mat();
+		trainingDataf20 = new Mat();
+		
+		ArrayList<Integer> trainingLabels = new ArrayList<Integer>();
+		File folder = new File(filepath);
+		File[] files = folder.listFiles();
+		System.out.println("number of files are " + files.length);
+		
+		if(!folder.isDirectory()){
+			System.err.println("Error! folder given is not a directory");
+		}
+		
+		//for each character, get the files and push their features in
+		//for(int i=0; i < numCharacters; i++){
+			for(File file : files ){
+				if(!file.isHidden()){
+					Mat character = Highgui.imread(file.getAbsolutePath(), 0);
+					
+					Mat f5 =  features(character,  5);
+					Mat f10 = features(character, 10);
+					Mat f15 = features(character, 15);
+					Mat f20 = features(character, 20);
+					
+					//do i need to convert to 32FC1?
+					System.out.println("f5 size is  " + f5.size());
+					trainingDataf5.push_back(f5);
+					System.out.println("f5 push back successful");
+					trainingDataf10.push_back(f10);
+					System.out.println("f10 push back successful");
+					trainingDataf15.push_back(f15);
+					System.out.println("f15 push back successful");
+					trainingDataf20.push_back(f20);
+					System.out.println("f20 push back successful");
+					char c = file.getName().charAt(0);
+					System.out.println("This is for character " + c);
+					//trainingLabels.add(i);
+					System.out.println("traininglabels added");
+				}
+			}
+		//}
+		
+		//puts all label into a mat with numcharacters x noflabels
+		for(int label : trainingLabels){	//please re read this and see if this is correct
+			classes.put(numCharacters, label, 1);
+		}
+		System.out.println("classes :" + classes.toString());
+		System.out.println("trainingDataf5 :" + trainingDataf5.toString());
+		System.out.println("trainingDataf10 :" + trainingDataf10.toString());
+		System.out.println("trainingDataf15 :" + trainingDataf15.toString());
+		System.out.println("trainingDataf20 :" + trainingDataf20.toString());
+		
+	}
+	
+	/**
+	 * cleans the static training variables and training labels. This should be done before fetching a new one.
+	 * @return	status of the training files. Return trues if all static variables are null
+	 */
+	public static boolean clearTrainingFiles(){
+		trainingDataf5.release();
+		trainingDataf10.release();
+		trainingDataf15.release();
+		trainingDataf20.release();
+		
+		if(trainingDataf5.empty() && trainingDataf10.empty() && trainingDataf15.empty() && trainingDataf20.empty()){
+			return true;
+		}
+		return false;
 	}
 
 }

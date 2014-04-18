@@ -34,16 +34,18 @@ import examples.MatToBufferedImage;
 import examples.Snapshot;
 
 public class Opticalflow extends Snapshot{
+	//ALL FIXED VARIABLES HERE
 	//maximum number of points for the algorithm
-	private final static int MAX_CORNERS 	 = 500;
-	private final static int WINDOW_SIZE 	 = 15;
-	private final static double QUALITY 	 = 0.01;
-	private final static double MIN_DISTANCE = 10;
-	private final static int FLOWSTEP	     = 50;
-	private final static String savefolder	 = "videos/saved";
-	private final static String readfolder	 = "videos/";
-	private final static String filename  	 = "vid1776";
-	private final static String extension 	 = ".mp4";
+	private final static int MAX_CORNERS 	  = 500;
+	private final static int WINDOW_SIZE 	  = 15;
+	private final static double QUALITY 	  = 0.01;
+	private final static double MIN_DISTANCE  = 10;
+	private final static int FLOWSTEP	      = 50;
+	private final static String savefolder	  = "videos/saved";
+	private final static String readfolder	  = "videos/";
+	private final static String filename  	  = "vid1776";
+	private final static String extension 	  = ".mp4";
+	private final static double quadrant_perc = 60.0;
 
 	
 	private static Mat prevgrey;//CvType.CV_8UC1
@@ -55,9 +57,12 @@ public class Opticalflow extends Snapshot{
 	private static MatOfPoint2f nextpoint;
 	private static MatOfByte  featuresfound;
 	private static MatOfFloat feature_errors;
+	
+	private static boolean HasFirstQuadrant = false;
+	private static boolean HasFourthQuadrant = false;
 
 	
-	private final static boolean onCamera = true;
+	private final static boolean onCamera = false;
 
 	
 	public Opticalflow(){
@@ -88,6 +93,8 @@ public class Opticalflow extends Snapshot{
 		double startTime = System.nanoTime();
 		double timediff;
 		int count = 0;
+		int nofframes = 1;
+		Mat firstframe = new Mat();
 		double fps;
 		
 		init(frame1);
@@ -115,11 +122,33 @@ public class Opticalflow extends Snapshot{
 			
 			Core.absdiff( prevgrey, nextgrey, diff );
 			double n = Core.norm(diff, Core.NORM_L2);
-			System.out.println("the n value is " + n);
+			//System.out.println("the n value is " + n);
 			
-			prevpoint = findFeatures(prevgrey);
+			//prevpoint = findFeatures(prevgrey);
+			if( AtFirstQuadrant(diff) ){
+				System.out.println("They're at First Quadrant.");
+				if(HasFourthQuadrant && !HasFirstQuadrant){
+					System.out.println("has right direction");
+				}
+				HasFirstQuadrant = true;
+			}else if( AtSecondQuadrant(diff) ){
+				System.out.println("They're at Second Quadrant.");
+			}else if( AtThirdQuadrant(diff)){
+				System.out.println("They're at Third Quadrant.");
+			}else if( AtFourthQuadrant(diff)){
+				System.out.println("They're at Fourth Quadrant.");
+				HasFourthQuadrant = true;
+				if(HasFirstQuadrant && HasFourthQuadrant){
+					System.out.println("WRONG WAY");
+					displayImage(prevgrey, "WRONG WAY capture");
+					//restart count
+					HasFirstQuadrant = false;
+				}
+			}
+			
+			
 			//displayImage(prevgrey, "hello");
-			result = calculateOptflow(prevgrey, nextgrey, prevpoint );
+			result = calculateOptflow(prevgrey, nextgrey );
 			
 			//prevgrey = OptflowFarneBack(prevgrey, nextgrey);
 			
@@ -132,7 +161,8 @@ public class Opticalflow extends Snapshot{
 			timediff = (System.nanoTime() - startTime) / 1e9;
 			count++;
 			fps = count/timediff;
-			System.out.println(fps);
+			nofframes++;
+			//System.out.println(fps);
 		}
 		System.exit(1);
 	}
@@ -209,7 +239,8 @@ public class Opticalflow extends Snapshot{
 	}
 
 	
-	public static Mat calculateOptflow(Mat prevframe, Mat nextframe, MatOfPoint2f prevpt){
+	public static Mat calculateOptflow(Mat prevframe, Mat nextframe){
+		  MatOfPoint2f prevpt = findFeatures(prevframe);
 		  Video.calcOpticalFlowPyrLK(prevframe, nextframe, prevpt, nextpoint, featuresfound, 
 									feature_errors, new Size(WINDOW_SIZE, WINDOW_SIZE), 5);
 		
@@ -240,15 +271,189 @@ public class Opticalflow extends Snapshot{
 	    return prevframe;
 	}
 	private static int checkDirection(Point[] prevpoints, Point[] nextpoints){
-
-	      for (int i = 0; i < MAX_CORNERS && i < prevpoints.length; i++) { 
-	    	  //check at left
-	    	  
-	    	  //check at right
-	    	  
-	      }
+		
+	    
 		
 		return -1;
+	}
+	
+	/**
+	 * <p> A move-to-Q-quadrant means that there is a difference in the placement of features of a specified percentage </p>
+	 * <p> The position of major features at First quadrant is determined by the AtFirstquadrant function </p>
+	 * @param firstframe	the first frame to look for features
+	 * @param nframe		The N frame to look for features
+	 * @return return true if there is a movement of majority features from other quadrants to the first quadrant
+	 */
+	private static boolean MoveToFirstQuadrant(Mat firstframe, Mat nframe){
+		if(!AtFirstQuadrant(firstframe) && AtFirstQuadrant(nframe)){
+			return true;
+		}
+		
+		
+		return false;
+	}
+	
+	/**
+	 * <p> A move-to-Q-quadrant means that there is a difference in the placement of features of a specified percentage </p>
+	 * <p> The position of major features at Second quadrant is determined by the AtSecondquadrant function </p>
+	 * @param firstframe	the first frame to look for features
+	 * @param nframe		The N frame to look for features
+	 * @return return true if there is a movement of majority features from other quadrants to the second quadrant
+	 */
+	private static boolean MoveToSecondQuadrant(Mat firstframe, Mat nframe){
+		if(!AtSecondQuadrant(firstframe) && AtSecondQuadrant(nframe)){
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * <p> A move-to-Q-quadrant means that there is a difference in the placement of features of a specified percentage </p>
+	 * <p> The position of major features at Third quadrant is determined by the AtThirdquadrant function </p>
+	 * @param firstframe	the first frame to look for features
+	 * @param nframe		The N frame to look for features
+	 * @return return true if there is a movement of majority features from other quadrants to the Third quadrant
+	 */
+	private static boolean MoveToThirdQuadrant(Mat firstframe, Mat nframe){
+		if(!AtThirdQuadrant(firstframe) && AtThirdQuadrant(nframe)){
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * <p> A move-to-Q-quadrant means that there is a difference in the placement of features of a specified percentage </p>
+	 * <p> The position of major features at Fourth quadrant is determined by the AtFourthquadrant function </p>
+	 * @param firstframe	the first frame to look for features
+	 * @param nframe		The N frame to look for features
+	 * @return return true if there is a movement of majority features from other quadrants to the Fourth quadrant
+	 */
+	private static boolean MoveToFourthQuadrant(Mat firstframe, Mat nframe){
+		if(!AtFourthQuadrant(firstframe) && AtFourthQuadrant(nframe)){
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * <p>The features are considered to be at a quadrant when a specified percentage of features are at first quadrant</p>
+	 * <p>The percentage is fixed a certain rate, and calculated by calculating the number of Points with specific Xs and Ys over total number of points</p>
+	 *  
+	 * @return returns true if features at the first quadrant exceeds the number of specified percentage
+	 */
+	private static boolean AtFirstQuadrant(Mat frame){
+		Mat img = frame;
+		MatOfPoint2f points_to_track = findFeatures(img);
+		
+		Point[] points = points_to_track.toArray();
+		//System.out.println("Points? we have " + points.length + " of them.");
+		int first_count = 0;
+		//count all points at first quadrant, that is
+		// x = less than half of width, y = less than half of height
+		for(Point point : points){
+			//System.out.println("their x is " + point.x + ", and their y is " + point.y);
+			if(point.x <= (frame.cols()/2) && point.y <= (frame.rows()/2)){
+				first_count++;
+			}
+		}
+		//System.out.println("perc is " +  ((double) first_count/points.length)*100);
+		if(((double) first_count/points.length)*100 > quadrant_perc){
+			return true; 
+		}
+		return false;
+	}
+	
+	/**
+	 * <p>The features are considered to be at a quadrant when a specified percentage of features are at second quadrant</p>
+	 * <p>The percentage is fixed a certain rate, and calculated by calculating the number of Points with specific Xs and Ys over total number of points</p>
+	 *  
+	 * @return returns true if features at the second quadrant exceeds the number of specified percentage
+	 */
+	private static boolean AtSecondQuadrant(Mat frame){
+		Mat img = frame;
+		MatOfPoint2f points_to_track = findFeatures(img);
+		Point[] points = points_to_track.toArray();
+		
+		//System.out.println("Points? we have " + points.length + " of them.");
+		
+		int second_count = 0;
+		//count all points at second quadrant, that is
+		// x = more than half of width, y = less than half of height
+		for(Point point : points){
+			//System.out.println("their x is " + point.x + ", and their y is " + point.y);
+			if(point.x >= (frame.cols()/2) && point.y <= (frame.rows()/2)){
+				
+				second_count++;
+			}
+		}
+		//System.out.println("perc is " +  ((double) second_count/points.length)*100);
+		if(((double) second_count/points.length)*100 > quadrant_perc){
+			return true; 
+		}
+		return false;
+	}
+	
+	/**
+	 * <p>The features are considered to be at a quadrant when a specified percentage of features are at third quadrant</p>
+	 * <p>The percentage is fixed a certain rate, and calculated by calculating the number of Points with specific Xs and Ys over total number of points</p>
+	 *  
+	 * @return returns true if features at the third quadrant exceeds the number of specified percentage
+	 */
+	private static boolean AtThirdQuadrant(Mat frame){
+		Mat img = frame;
+		MatOfPoint2f points_to_track = findFeatures(img);
+		Point[] points = points_to_track.toArray();
+		
+		//System.out.println("Points? we have " + points.length + " of them.");
+		
+		int third_count = 0;
+		//count all points at second quadrant, that is
+		//x is less than half of width, y = more than half of height
+		for(Point point : points){
+			//System.out.println("their x is " + point.x + ", and their y is " + point.y);
+			if(point.x <= (frame.cols()/2) && point.y >= (frame.rows()/2)){
+				third_count++;
+			}
+		}
+		//System.out.println("perc is " +  ((double) third_count/points.length)*100);
+		if(((double) third_count/points.length)*100 > quadrant_perc){
+			return true; 
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * <p>The features are considered to be at fourth quadrant when a specified percentage of features are at the fourth quadrant</p>
+	 * <p>The percentage is fixed a certain rate, and calculated by calculating the number of Points with specific Xs and Ys over total number of points</p>
+	 * 
+	 * @return returns true if features at the fourth quadrant exceeds the number of specified percentage
+	 */
+	private static boolean AtFourthQuadrant(Mat frame){
+		Mat img = frame;
+		MatOfPoint2f points_to_track = findFeatures(img);
+		Point[] points = points_to_track.toArray();
+		
+		//System.out.println("Points? we have " + points.length + " of them.");
+		
+		int fourth_count = 0;
+		//count all points at second quadrant, that is
+		// x = more than half of width, y = more than half of height
+		for(Point point : points){
+			//System.out.println("their x is " + point.x + ", and their y is " + point.y);
+			if(point.x >= (frame.cols()/2) && point.y >= (frame.rows()/2)){
+				fourth_count++;
+			}
+		}
+		//System.out.println("perc is " +  ((double) fourth_count/points.length)*100);
+		if(((double) fourth_count/points.length)*100 > quadrant_perc){
+			return true; 
+		}
+		
+		return false;
 	}
 	
 }

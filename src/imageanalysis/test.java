@@ -20,17 +20,25 @@ public class test extends Snapshot {
 	private static final int numberofcandidates = 5;
 	private static final String readfolder = "images/";
 	private static final String savefolder = "images/results/";
+	private static final String trainingfolder = "train/characters/";
 	
 	public static void main(String args[]) throws IOException{
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 		Mat src = Highgui.imread(savefolder + "possibleplates/positives/" + filename + extension);
 		
-
-		displayImage(src, "hello");
-		System.out.println(src);
-		Mat img = OCR.SketchContours(src);
-		System.out.println(img.toString());
-		displayImage(img, "hello");
+		//initiate OCR training
+		OCR.getTrainingFiles(trainingfolder);
+		OCR.trainANN();
+		
+		System.out.println("training done");
+		
+		ArrayList<Mat> contours = new ArrayList<Mat>();
+		ArrayList<Character> characters = new ArrayList<Character>();
+		contours = OCR.SketchContours(src);
+		for(Mat contour : contours){
+			char character = OCR.GetCharacter(contour);
+			characters.add(character);
+		}
 
 	}
 }

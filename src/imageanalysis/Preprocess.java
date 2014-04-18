@@ -21,7 +21,7 @@ public class Preprocess extends Snapshot{
 	
 	private static BufferedImage img;
 	private static String extension = ".jpg";
-	//private static String filename = "car7336";
+	private static String filename = "car7336";
 	private static final int numberofcandidates = 3;
 	private static final String readfolder = "images/";
 	private static final String savefolder = "images/results/";
@@ -30,40 +30,45 @@ public class Preprocess extends Snapshot{
 	private static SVMachine svm;
 	
 	private static boolean writerOn = false;
-	private static boolean displayOn = false;
+	private static boolean displayOn = true;
 
 	private static int isplate 	 = 0;
 	private static int notplate  = 0;
 	private static int haveplate = 0;
 	private static int noplate 	 = 0;
 	
-	public static void main(String args[]) throws IOException{
-		svm = new SVMachine();
-		svm.getTrainingfiles(savefolder + "possibleplates/");
-		svm.init();
-		
-		int count = 1;
-		String filename = "test_00" + count;
-		File image = new File(readfolder + filename + ".jpg");
-		while(new File(readfolder + filename + ".jpg").exists()){
-			System.out.println("******** " + filename + "*******");
-			run(filename);
-			count++;
-			if(count >= 10){
-				
-				filename = "test_0" + count;
-			}else{
-				filename = "test_00" + count;
-			}
-		}
-		svm.close();
-		
-		System.out.println("total successful SVM prediction possible plates " + isplate +  "/" + (isplate+notplate) + 
-				",\n while total unsuccessful SVM prediction possible plates are " + notplate + "/" + (isplate+notplate));
-		System.out.println("\n\n");
-	}
+//	public static void main(String args[]) throws IOException{
+//		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+//		invertImage();
+//	}
 	
-	public static void run(String filename) throws IOException {
+//	public static void main(String args[]) throws IOException{
+//		svm = new SVMachine();
+//		svm.getTrainingfiles(savefolder + "possibleplates/");
+//		svm.init();
+//		
+//		int count = 1;
+//		String filename = "test_00" + count;
+//		File image = new File(readfolder + filename + ".jpg");
+//		while(new File(readfolder + filename + ".jpg").exists()){
+//			System.out.println("******** " + filename + "*******");
+//			run(filename);
+//			count++;
+//			if(count >= 10){
+//				
+//				filename = "test_0" + count;
+//			}else{
+//				filename = "test_00" + count;
+//			}
+//		}
+//		svm.close();
+//		
+//		System.out.println("total successful SVM prediction possible plates " + isplate +  "/" + (isplate+notplate) + 
+//				",\n while total unsuccessful SVM prediction possible plates are " + notplate + "/" + (isplate+notplate));
+//		System.out.println("\n\n");
+//	}
+	
+	public static void main(String args[]) throws IOException {
 		svm = new SVMachine();
 		svm.getTrainingfiles(savefolder + "possibleplates/");
 		svm.init();
@@ -75,8 +80,8 @@ public class Preprocess extends Snapshot{
 		
 		Mat source = Highgui.imread(readfolder + filename + extension);
 		
-		Imgproc.resize(source, source, new Size(source.width(), source.height()));
-		//Imgproc.resize(source, source, new Size(source.width()*0.2, source.height()*0.2));
+		//Imgproc.resize(source, source, new Size(source.width(), source.height()));
+		Imgproc.resize(source, source, new Size(source.width()*0.2, source.height()*0.2));
 		Mat processed = new Mat(source.width(), source.height(), CvType.CV_64FC2);
 		Coordinates[] ycoords = new Coordinates[2];//0 is ypeak, 1 is yband
 		Coordinates[] xcoords = new Coordinates[2];//0 is xpeak, 1 is xband
@@ -399,16 +404,18 @@ public class Preprocess extends Snapshot{
  */
 //	private static void invertImage() throws IOException{
 //		MatToBufferedImage conv = new MatToBufferedImage();
-//		File folder = new File(savefolder + "possibleplates/" + "positives/");
+//		File folder = new File("train/characters");
 //		
 //		for(File file : folder.listFiles()){
 //			if(!file.isHidden()){
 //				Mat img = Highgui.imread(file.getAbsolutePath());
 //				Core.bitwise_not(img, img);
+//				System.out.println(img.size());
+//				Imgproc.resize(img, img, new Size(40,50));
 //				
-//				displayImage(img,"test");
+//				//displayImage(img,"test");
 //				BufferedImage image = conv.getImage(img);
-//				System.out.println(file.getAbsolutePath());
+//				//System.out.println(file.getAbsolutePath());
 //				File outputfile = new File(file.getAbsolutePath());
 //				ImageIO.write(image, "jpg", outputfile);
 //			} 
