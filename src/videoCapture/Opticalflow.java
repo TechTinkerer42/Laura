@@ -38,7 +38,7 @@ public class Opticalflow extends Snapshot{
 	//maximum number of points for the algorithm
 	private final static int MAX_CORNERS 	  = 500;
 	private final static int WINDOW_SIZE 	  = 15;
-	private final static double QUALITY 	  = 0.01;
+	private final static double QUALITY 	  = 0.10;
 	private final static double MIN_DISTANCE  = 10;
 	private final static int FLOWSTEP	      = 50;
 	private final static String savefolder	  = "videos/saved";
@@ -60,6 +60,7 @@ public class Opticalflow extends Snapshot{
 	
 	private static boolean HasFirstQuadrant = false;
 	private static boolean HasFourthQuadrant = false;
+	private static boolean HasThirdQuadrant = false;
 
 	
 	private final static boolean onCamera = false;
@@ -123,30 +124,12 @@ public class Opticalflow extends Snapshot{
 			Core.absdiff( prevgrey, nextgrey, diff );
 			double n = Core.norm(diff, Core.NORM_L2);
 			//System.out.println("the n value is " + n);
+			boolean wrongdirection = false;
 			
-			//prevpoint = findFeatures(prevgrey);
-			if( AtFirstQuadrant(diff) ){
-				System.out.println("They're at First Quadrant.");
-				if(HasFourthQuadrant && !HasFirstQuadrant){
-					System.out.println("has right direction");
-				}
-				HasFirstQuadrant = true;
-			}else if( AtSecondQuadrant(diff) ){
-				System.out.println("They're at Second Quadrant.");
-			}else if( AtThirdQuadrant(diff)){
-				System.out.println("They're at Third Quadrant.");
-			}else if( AtFourthQuadrant(diff)){
-				System.out.println("They're at Fourth Quadrant.");
-				HasFourthQuadrant = true;
-				if(HasFirstQuadrant && HasFourthQuadrant){
-					System.out.println("WRONG WAY");
-					displayImage(prevgrey, "WRONG WAY capture");
-					//restart count
-					HasFirstQuadrant = false;
-				}
+			wrongdirection = inWrongDirection(diff);
+			if(wrongdirection){
+				displayImage(prevgrey, "offense capture");
 			}
-			
-			
 			//displayImage(prevgrey, "hello");
 			result = calculateOptflow(prevgrey, nextgrey );
 			
@@ -269,12 +252,6 @@ public class Opticalflow extends Snapshot{
 	    feature_errors.release();
 	    
 	    return prevframe;
-	}
-	private static int checkDirection(Point[] prevpoints, Point[] nextpoints){
-		
-	    
-		
-		return -1;
 	}
 	
 	/**
@@ -451,6 +428,48 @@ public class Opticalflow extends Snapshot{
 		//System.out.println("perc is " +  ((double) fourth_count/points.length)*100);
 		if(((double) fourth_count/points.length)*100 > quadrant_perc){
 			return true; 
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * <p> Checks if a motion is going in a wrong direction, and returns true if it does. </p>
+	 * <p> A wrong direction is defined by first having features at Third Quadrant, and later found to be at Fourth Quadrant </p>
+	 * <p> If a wrong direction is detected, the static boolean variables are reset and returns true </p>
+	 * @param frame Frame to be tracked with features
+	 * @return return true if a wrong direction is detected
+	 * @throws IOException For displayImage function. Throws if unable to read BufferedImage file.
+	 */
+	private static boolean inWrongDirection(Mat frame) throws IOException{
+		
+		//Imgproc.GaussianBlur(frame, frame, new Size(5,5), 0);
+		
+		if( AtFirstQuadrant(frame) ){
+			System.out.println("They're at First Quadrant.");
+			HasFirstQuadrant = true;
+		}else if( AtSecondQuadrant(frame) ){
+			System.out.println("They're at Second Quadrant.");
+		}else if( AtThirdQuadrant(frame)){
+			System.out.println("They're at Third Quadrant.");
+			
+			if(HasFourthQuadrant && !HasThirdQuadrant){
+				System.out.println("has right direction");
+				//clear count
+				HasFourthQuadrant = false;
+			//	return true;
+			}
+			HasThirdQuadrant = true;
+		}else if( AtFourthQuadrant(frame)){
+			System.out.println("They're at Fourth Quadrant.");
+			HasFourthQuadrant = true;
+			if(HasThirdQuadrant && HasFourthQuadrant){
+				System.out.println("WRONG WAY");
+				//displayImage(frame, "wrong way capture");
+				//restart count
+				HasThirdQuadrant = false;
+				return true;
+			}
 		}
 		
 		return false;
