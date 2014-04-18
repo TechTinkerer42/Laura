@@ -31,7 +31,7 @@ public class Execute extends JFrame{
 		getContentPane().add(scrollPane);
 		
 		 about = new JTextArea();
-		 about.setFont(new Font("Monospaced", Font.PLAIN, 16));
+		 about.setFont(new Font("Monospaced", Font.PLAIN, 40));
 		about.setBackground(SystemColor.control);
 		scrollPane.setViewportView(about);
 		
@@ -54,9 +54,8 @@ public class Execute extends JFrame{
 		return;
 	}
 	
-	void addHomeListener(ActionListener listenForExecuteButton){
-		Home.addActionListener(listenForExecuteButton); 
-		System.out.println("execute");
-	}
+	void addHomeListener(ActionListener listenForHomeButton){
+		Home.addActionListener(listenForHomeButton); 
+			}
 	
 }

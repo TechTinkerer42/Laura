@@ -182,12 +182,7 @@ public class Home extends JFrame{
 		Email.setBounds(572, 588, 106, 28);
 		getContentPane().add(Email);
 		
-		 Open = new JButton("Open Image");
-		Open.setFont(new Font("Gabriola", Font.PLAIN, 16));
-		Open.setBounds(297, 559, 100, 28);
-		getContentPane().add(Open);
-		
-	pic = new JLabel();
+		pic = new JLabel();
 		pic.setBounds(10, 126, 381, 366);
 		getContentPane().add(pic);
 	}
@@ -293,6 +288,10 @@ public void setRecResult(){
 	void addOpenListener(ActionListener listenForOpenButton){
 		Open.addActionListener(listenForOpenButton); 
 			}
+	
+	void addExecuteListener(ActionListener listenForExecuteButton){
+		Execute.addActionListener(listenForExecuteButton);
+	}
 	
 	//error message
 	public void displayErrorMessage(String errorMessage) {

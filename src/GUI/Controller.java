@@ -66,7 +66,6 @@ public class Controller {
         this.Home.addAboutListener(new AboutListener());
        // this.Home.addHelpListener(new HelpListener());
        this.Home.addUserListener(new UserListener());
-       this.Home.addOpenListener(new OpenListener());
         
         //this.Home.addAddListener(new AddListener());
               
@@ -147,26 +146,26 @@ public class Controller {
 		}
 	 }
 	 
-	 class OpenListener implements ActionListener {
-
-	
-		public void actionPerformed(ActionEvent arg0) {
-			
-			String p = urlpath ;
-			ImageIcon icon = new ImageIcon(p);
-			Image img = icon.getImage();
-			img = img.getScaledInstance(381, 386, Image.SCALE_DEFAULT);
-			
-			BufferedImage buffimg = new BufferedImage(381, 386, BufferedImage.TYPE_INT_ARGB);
-			
-			Graphics g = buffimg.createGraphics();
-			g.drawImage(img, 0, 0, 381, 386, null);
-			ImageIcon newicon = new ImageIcon(img);
-			
-			Home.pic.setIcon(newicon);
-		}
-		 
-	 }
+//	 class OpenListener implements ActionListener {
+//
+//	
+//		public void actionPerformed(ActionEvent arg0) {
+//			
+//			String p = urlpath ;
+//			ImageIcon icon = new ImageIcon(p);
+//			Image img = icon.getImage();
+//			img = img.getScaledInstance(381, 386, Image.SCALE_DEFAULT);
+//			
+//			BufferedImage buffimg = new BufferedImage(381, 386, BufferedImage.TYPE_INT_ARGB);
+//			
+//			Graphics g = buffimg.createGraphics();
+//			g.drawImage(img, 0, 0, 381, 386, null);
+//			ImageIcon newicon = new ImageIcon(img);
+//			
+//			Home.pic.setIcon(newicon);
+//		}
+//		 
+//	 }
 
 	 class AddListener implements ActionListener {
 
@@ -246,57 +245,46 @@ public class Controller {
 	 }
 	
 	 class BrowseListener implements ActionListener{
-
-		
 		public void actionPerformed(ActionEvent e) {
 			String path;
-			
-		
-
 			JFileChooser chooser = new JFileChooser();
 			chooser.showOpenDialog(null);
 			File f = chooser.getSelectedFile();
 			path = f.getAbsolutePath();
 			urlpath = path;
 			Home.path.setText(path);
-			//path.split("\\");
 			
+			ImageIcon icon = new ImageIcon(path);
+			Image img = icon.getImage();
+			img = img.getScaledInstance(381, 386, Image.SCALE_DEFAULT);
 			
-			//DataView.path.setText(path);
+			BufferedImage buffimg = new BufferedImage(381, 386, BufferedImage.TYPE_INT_ARGB);
 			
+			Graphics g = buffimg.createGraphics();
+			g.drawImage(img, 0, 0, 381, 386, null);
+			ImageIcon newicon = new ImageIcon(img);
+			
+			Home.pic.setIcon(newicon);
+			//path.split("\\");			
+			//DataView.path.setText(path);	
 		}
-	 
-	 
 	 }
 	 
 	 class ClearListener implements ActionListener{
-
-		
-		public void actionPerformed(ActionEvent arg0) {
-			
+		public void actionPerformed(ActionEvent arg0) {	
 			Home.setManuallyInputPlate();
-		}
-		 
-		 
+		} 
 	 }
 	 
 	 class DeleteListener implements ActionListener{
 
 		public void actionPerformed(ActionEvent e) {
 			DefaultTableModel model= (DefaultTableModel)Home.gettblImage().getModel();
-		
-			
 			int numRows = Home.gettblImage().getRowCount();
 			//for (int i=numRows-1;i>0;i++) {
 			model.removeRow(numRows-1); 
-			Home.gettblImage().revalidate();
-			
-			
-			
-			
-		}
-		 
-		 
+			Home.gettblImage().revalidate();	
+		}		 
 	 }
 	 
 	/* class DataBrowseListener implements ActionListener{
@@ -320,12 +308,8 @@ public class Controller {
 		}*/
 		  
 	 class EmailListener implements ActionListener{
-
-	
 		public void actionPerformed(ActionEvent e) {
-			
 		//	Email Email = new Email();
-			
 			EventQueue.invokeLater(new Runnable() {
 				public void run() {
 					try {
@@ -336,11 +320,9 @@ public class Controller {
 					}
 				}
 			});
-		}
-			
-			
-		}
-	 
+		}	
+	}
+ 
 	 class ExportListener implements ActionListener {
 
 		
@@ -364,13 +346,9 @@ public class Controller {
 		}
 		 
 	 class AboutListener implements ActionListener{
-
 		@Override
 		public void actionPerformed(ActionEvent arg0) {
-			
-			
-			try {
-				
+			try {	
 				String file = "GRP - Help and About.txt";
 				FileReader r = new FileReader(file);
 				/*BufferedReader reader = new BufferedReader(r);
@@ -389,23 +367,14 @@ public class Controller {
 				e.printStackTrace();
 			}
 			
-			
-			
 			About.setVisible(true);
 			Home.setVisible(false);
 		
-			Camera.setVisible(false);
-			
-			
-			
-			
-		}
-		 
-		 
+			Camera.setVisible(false);	
+		} 
 	 }
 	
 	 class UserListener implements ActionListener{
-
 		public void actionPerformed(ActionEvent e) {
 			System.out.println("works");
 			EventQueue.invokeLater(new Runnable() {
