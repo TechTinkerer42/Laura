@@ -8,7 +8,7 @@ import javax.swing.JPanel;
 
 
 
-class VidPanel extends JPanel{
+public class VidPanel extends JPanel{
 	BufferedImage img;
 	
 	public VidPanel(BufferedImage image){

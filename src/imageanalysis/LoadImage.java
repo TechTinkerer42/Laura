@@ -1,4 +1,4 @@
-package examples;
+package imageanalysis;
 import java.awt.*;
 import javax.swing.*;
 import org.opencv.core.Mat;

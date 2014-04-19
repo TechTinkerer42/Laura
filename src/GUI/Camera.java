@@ -6,23 +6,33 @@ import net.miginfocom.swing.MigLayout;
 
 import javax.swing.JButton;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionListener;
+import java.util.Timer;
 
+import javax.swing.JLabel;
 import javax.swing.JTextField;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 import javax.swing.JPanel;
+import javax.media.*;
+ 
 
 public class Camera extends JFrame{
-	private JTextField textField;
+	private JButton	User;
+	private JLabel  Camera1;
+	private JButton BrowseVid;
 	private JButton Home;
 	private JButton Camera;
 	private JButton LogOut;
 	private JButton About;
+	private JLabel lblNewLabel;
+	JPanel video;
 	
 	public Camera() {
 		setTitle("ANPR");
+		setResizable(false);
 		getContentPane().setLayout(null);
 		
 		Home = new JButton("Home");
@@ -35,22 +45,36 @@ public class Camera extends JFrame{
 		Camera.setFont(new Font("Gabriola", Font.PLAIN, 16));
 		getContentPane().add(Camera);
 		
-		About= new JButton("About");
-		About.setBounds(247, 7, 63, 37);
+		About = new JButton("About");
+		About.setBounds(179, 7, 73, 28);
 		About.setFont(new Font("Gabriola", Font.PLAIN, 16));
 		getContentPane().add(About);
 		
-		textField = new JTextField();
-		textField.setBounds(699, 7, 109, 36);
-		textField.setText("Signed in as -");
-		textField.setFont(new Font("Gabriola", Font.PLAIN, 17));
-		textField.setColumns(10);
-		getContentPane().add(textField);
+		User = new JButton("User");
+		User.setBounds(748, 7, 76, 28);
+		User.setFont(new Font("Gabriola", Font.PLAIN, 16));
+		getContentPane().add(User);
+		
+		Camera1 = new JLabel("Camera1");
+		Camera1.setBounds(49, 55, 60, 30);
+		Camera1.setFont(new Font("Gabriola", Font.PLAIN, 17));
+		getContentPane().add(Camera1);
+        
+        BrowseVid = new JButton("BrowseVid");
+		BrowseVid.setBounds(10, 557, 86, 28);
+		BrowseVid.setFont(new Font("Gabriola", Font.PLAIN, 16));
+		getContentPane().add(BrowseVid);
+		
 		
 		LogOut = new JButton("Log out");
-		LogOut.setBounds(737, 48, 71, 37);
+		LogOut.setBounds(748, 45, 76, 28);
 		LogOut.setFont(new Font("Gabriola", Font.PLAIN, 16));
 		getContentPane().add(LogOut);
+		
+		lblNewLabel = new JLabel("Signed in as");
+		lblNewLabel.setBounds(683, 11, 61, 28);
+		lblNewLabel.setFont(new Font("Gabriola", Font.PLAIN, 16));
+		getContentPane().add(lblNewLabel);
 		
 		JSeparator separator = new JSeparator();
 		separator.setBounds(419, 89, 1, 499);
@@ -61,9 +85,14 @@ public class Camera extends JFrame{
 		separator_1.setBounds(7, 338, 801, 2);
 		getContentPane().add(separator_1);
 		
-		JPanel panel = new JPanel();
-		panel.setBounds(7, 89, 402, 238);
-		getContentPane().add(panel);
+		
+		
+		video = new JPanel();
+		video.setBounds(10, 110, 360, 220);
+		//video.setBackground(new Color(150, 0, 0));
+		getContentPane().add(video);
+		
+		
 	}
 	
 	void addHomeListener(ActionListener listenForHomeButton){
@@ -86,5 +115,13 @@ public class Camera extends JFrame{
 	
 	void addAboutListener(ActionListener listenForAboutButton){
 		About.addActionListener(listenForAboutButton); 
+			}
+    
+	void addBrowseVidListener(ActionListener listenForBrowseVidButton){
+		BrowseVid.addActionListener(listenForBrowseVidButton); 
+			}
+	
+	void addUserListener(ActionListener listenForUserButton){
+		User.addActionListener(listenForUserButton); 
 			}
 }

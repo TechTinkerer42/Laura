@@ -1,4 +1,4 @@
-package examples;
+package imageanalysis;
 
 import java.awt.*;  
 import java.awt.image.BufferedImage;  

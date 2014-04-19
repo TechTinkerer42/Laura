@@ -30,14 +30,14 @@ public class About extends JFrame{
 		scrollPane.setBounds(20, 41, 795, 556);
 		getContentPane().add(scrollPane);
 		
-		 about = new JTextArea();
-		 about.setFont(new Font("Monospaced", Font.PLAIN, 16));
+		about = new JTextArea();
+		about.setFont(new Font("Monospaced", Font.PLAIN, 12));
 		about.setBackground(SystemColor.control);
 		scrollPane.setViewportView(about);
 		
-		Home = new JButton("Home");
+		Home = new JButton("Exit About");
 		Home.setFont(new Font("Gabriola", Font.PLAIN, 16));
-		Home.setBounds(326, 7, 89, 23);
+		Home.setBounds(728, 7, 89, 23);
 		getContentPane().add(Home);
 	}
 	

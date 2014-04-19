@@ -1,5 +1,8 @@
 package videoCapture;
 
+import imageanalysis.MatToBufferedImage;
+import imageanalysis.Snapshot;
+
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
@@ -30,8 +33,6 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.video.Video;
 import org.w3c.dom.css.RGBColor;
 
-import examples.MatToBufferedImage;
-import examples.Snapshot;
 
 public class Opticalflow extends Snapshot{
 	//ALL FIXED VARIABLES HERE
@@ -43,13 +44,14 @@ public class Opticalflow extends Snapshot{
 	private final static int FLOWSTEP	      = 50;
 	private final static String savefolder	  = "videos/saved";
 	private final static String readfolder	  = "videos/";
-	private final static String filename  	  = "vid1776";
+//	private final static String filename  	  = "vid1776";
 	private final static String extension 	  = ".mp4";
 	private final static double quadrant_perc = 60.0;
 
 	
 	private static Mat prevgrey;//CvType.CV_8UC1
 	private static Mat nextgrey;//CvType.CV_8UC1
+	public  static Mat WrongDirImg;
 	
 	//CvPoint2D32F Arrays are 32 bit points to track features
 	private static MatOfPoint prevpointS;
@@ -61,23 +63,29 @@ public class Opticalflow extends Snapshot{
 	private static boolean HasFirstQuadrant = false;
 	private static boolean HasFourthQuadrant = false;
 	private static boolean HasThirdQuadrant = false;
-
+	
+//	public static JFrame jf = new JFrame();
+//	public static VidPanel panel;
 	
 	private final static boolean onCamera = false;
 
 	
 	public Opticalflow(){
+		
 	}
 	
 	
-	public static void main(String args[]) throws IOException, InterruptedException{
+	public void run(String path) throws IOException, InterruptedException{
+		JFrame jf = new JFrame();
+		VidPanel panel;
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 		VideoHelper vid = new VideoHelper();
 		
 		if(onCamera){
 			vid.onCamera();
 		}else{
-			vid.loadfile(readfolder + filename + extension);
+			//vid.loadfile(readfolder + filename + extension);
+			vid.loadfile(path);
 		}
 		Mat frame1 = new Mat();
 		frame1 = vid.grabframe();
@@ -88,7 +96,7 @@ public class Opticalflow extends Snapshot{
 		Mat diff = new Mat();
 		Mat result = new Mat();
 		MatToBufferedImage conv = new MatToBufferedImage();
-		JFrame jf = new JFrame();
+		
 		
 		boolean hasNext = true;
 		double startTime = System.nanoTime();
@@ -100,9 +108,10 @@ public class Opticalflow extends Snapshot{
 		
 		init(frame1);
 		prevgrey = frame1;
+		displayImage(prevgrey, "prevgrey");
+		
 		jf.setSize(prevgrey.width(), prevgrey.height());
 		jf.setTitle("optical flow");
-		VidPanel panel;
 		Imgproc.cvtColor(prevgrey, prevgrey, Imgproc.COLOR_RGB2GRAY);
 	
 		while(hasNext){
@@ -128,7 +137,8 @@ public class Opticalflow extends Snapshot{
 			
 			wrongdirection = inWrongDirection(diff);
 			if(wrongdirection){
-				displayImage(prevgrey, "offense capture");
+				//displayImage(prevgrey, "offense capture");
+				WrongDirImg = prevgrey;
 			}
 			//displayImage(prevgrey, "hello");
 			result = calculateOptflow(prevgrey, nextgrey );
@@ -136,7 +146,9 @@ public class Opticalflow extends Snapshot{
 			//prevgrey = OptflowFarneBack(prevgrey, nextgrey);
 			
 			img = conv.getImage(result);
+			
 			panel = new VidPanel(img);
+			
 			jf.setContentPane(panel);
 			jf.setVisible(true);
 			
@@ -146,6 +158,7 @@ public class Opticalflow extends Snapshot{
 			fps = count/timediff;
 			nofframes++;
 			//System.out.println(fps);
+			
 		}
 		System.exit(1);
 	}

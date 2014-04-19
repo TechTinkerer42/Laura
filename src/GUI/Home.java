@@ -3,6 +3,8 @@ package GUI;
 import javax.swing.JFrame;
 import javax.swing.JButton;
 
+import java.awt.Component;
+import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Font;
@@ -21,6 +23,7 @@ import net.miginfocom.swing.MigLayout;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
+import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
 
 import java.awt.Color;
@@ -32,6 +35,7 @@ public class Home extends JFrame{
 	private JTextField ManuallyInputPlate;
 	JTextField path;
 	private JButton Home;
+	 JButton Admin;
 	private JButton Camera;
 	private JButton About;
 	private JButton LogOut;
@@ -48,8 +52,8 @@ public class Home extends JFrame{
 	private JLabel lblNewLabel;
 	private JButton User;
 	private JTable table;
-	private JTextPane RecResult;
 	private JButton Open;
+	JLabel RecResult;
 	JLabel pic;
 	
 	public Home() {
@@ -84,7 +88,7 @@ public class Home extends JFrame{
 		getContentPane().add(User);
 		
 		LogOut = new JButton("Log out");
-		LogOut.setBounds(748, 50, 76, 28);
+		LogOut.setBounds(748, 45, 76, 28);
 		LogOut.setFont(new Font("Gabriola", Font.PLAIN, 16));
 		getContentPane().add(LogOut);
 		
@@ -98,8 +102,9 @@ public class Home extends JFrame{
 		RecognitionResult.setFont(new Font("Gabriola", Font.PLAIN, 16));
 		getContentPane().add(RecognitionResult);
 		
-		RecResult = new JTextPane();
-		RecResult.setBounds(444, 96, 234, 28);
+		//plate put here
+		RecResult = new JLabel();
+		RecResult.setBounds(520, 96, 234, 28);
 		getContentPane().add(RecResult);
 		
 		JSeparator separator_1 = new JSeparator();
@@ -107,8 +112,8 @@ public class Home extends JFrame{
 		separator_1.setOrientation(SwingConstants.VERTICAL);
 		getContentPane().add(separator_1);
 		
-		ManuallyInputPlate = new JTextField();
-		ManuallyInputPlate.setBounds(504, 135, 95, 34);
+		ManuallyInputPlate = new JTextField("");
+		ManuallyInputPlate.setBounds(524, 135, 95, 34);
 		ManuallyInputPlate.setFont(new Font("Gabriola", Font.PLAIN, 16));
 		getContentPane().add(ManuallyInputPlate);
 		ManuallyInputPlate.setColumns(10);
@@ -117,6 +122,11 @@ public class Home extends JFrame{
 		AddToTable.setBounds(407, 180, 106, 28);
 		AddToTable.setFont(new Font("Gabriola", Font.PLAIN, 16));
 		getContentPane().add(AddToTable);
+		
+		Admin = new JButton("Admin");
+		Admin.setBounds(50, 50, 76, 28);
+		Admin.setFont(new Font("Gabriola", Font.PLAIN, 50));
+		getContentPane().add(Admin);
 		
 		Clear = new JButton("Clear Field");
 		Clear.setBounds(523, 180, 106, 28);
@@ -182,8 +192,10 @@ public class Home extends JFrame{
 		Email.setBounds(572, 588, 106, 28);
 		getContentPane().add(Email);
 		
+		
 		pic = new JLabel();
 		pic.setBounds(10, 126, 381, 366);
+		pic.setForeground(new Color(255, 0, 0));
 		getContentPane().add(pic);
 	}
 	
@@ -196,9 +208,9 @@ public class Home extends JFrame{
 		return ManuallyInputPlate.getText();
 	}
 	
-public void setManuallyInputPlate(){
+public void setManuallyInputPlate(String text){
 		
-		ManuallyInputPlate.setText("");
+		ManuallyInputPlate.setText(text);
 	}
 	
 
@@ -291,6 +303,10 @@ public void setRecResult(){
 	
 	void addExecuteListener(ActionListener listenForExecuteButton){
 		Execute.addActionListener(listenForExecuteButton);
+	}
+	
+	void addAdminListener(ActionListener listenForAdminButton){
+		Admin.addActionListener(listenForAdminButton);
 	}
 	
 	//error message

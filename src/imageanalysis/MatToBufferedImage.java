@@ -1,4 +1,4 @@
-package examples;
+package imageanalysis;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.ByteArrayInputStream;
@@ -67,11 +67,11 @@ public class MatToBufferedImage {
                 return img;
         }
         
-    	public Mat getMatFromImage(BufferedImage img, int mattype){
+    	public Mat getMatFromImage(BufferedImage image){
     		Mat mat = new Mat();
-    		byte[] data = ((DataBufferByte)img.getRaster().getDataBuffer()).getData();
+    		byte[] data = ((DataBufferByte)image.getRaster().getDataBuffer()).getData();
     		mat.put(0, 0, data);
-    		mat.convertTo(mat, mattype);
+    		//mat.convertTo(mat, mattype);
     		
     		return mat;
     	}

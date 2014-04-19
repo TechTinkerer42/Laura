@@ -28,8 +28,8 @@ public class Main {
 	       Login.setSize(451, 305);
 	       Home.setSize(860, 652);
 	     //  DataView.setSize(831,636);
-	       Camera.setSize(831,636);
-	       About.setSize(831,636);
+	       Camera.setSize(860,652);
+	       About.setSize(860,652);
 	      // Settings.setSize(831,636);
 
 	}

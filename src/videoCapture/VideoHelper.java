@@ -3,6 +3,9 @@ package videoCapture;
 import static org.opencv.highgui.Highgui.CV_CAP_PROP_FRAME_HEIGHT;
 import static org.opencv.highgui.Highgui.CV_CAP_PROP_FRAME_WIDTH;
 
+import imageanalysis.MatToBufferedImage;
+import imageanalysis.Snapshot;
+
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -21,8 +24,6 @@ import org.opencv.core.Size;
 import org.opencv.highgui.VideoCapture;
 import org.opencv.imgproc.Imgproc;
 
-import examples.MatToBufferedImage;
-import examples.Snapshot;
 
 public class VideoHelper extends Snapshot {
 
@@ -91,7 +92,7 @@ public class VideoHelper extends Snapshot {
 	
 	
 	
-	public void view(String path, String windowcaption, int viewmode) throws IOException, InterruptedException{
+	public void view(String path, String windowcaption) throws IOException, InterruptedException{
 		loadfile(path);
 		BufferedImage img;
 		JFrame jf = new JFrame();
@@ -111,7 +112,7 @@ public class VideoHelper extends Snapshot {
 				close();
 				return;
 			}
-			switch(viewmode){
+			switch(4){
 				case 1: frame1.assignTo(frame1, CvType.CV_8U);	Imgproc.cvtColor(frame1, frame1, Imgproc.COLOR_RGB2GRAY); break;
 				case 2: frame1.assignTo(frame1, CvType.CV_8U);	Imgproc.cvtColor(frame1, frame1, Imgproc.COLOR_RGB2GRAY); 
 						cap.read(frame2);

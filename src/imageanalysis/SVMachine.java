@@ -1,4 +1,4 @@
-package examples;
+package imageanalysis;
 
 import java.io.File;
 

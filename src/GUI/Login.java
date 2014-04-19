@@ -109,6 +109,26 @@ public class Login extends JFrame {
 		}
 	}
 
+	public int getStatusID(){
+		int status_id = 0;
+		try
+		{
+			String Username = username.getText();
+			PreparedStatement loginStatement2 = con.prepareStatement("SELECT Status_Id FROM login WHERE Login_id='"+Username+"'");
+			ResultSet result2 = loginStatement2.executeQuery();	
+			while (result2.next()){
+				status_id = result2.getInt("Status_Id");
+			}
+		}
+		
+		
+		catch (Exception e1)
+		{
+		e1.printStackTrace();
+		}
+		return status_id;
+	}
+
 
 		public String getloginStatus(){
 			String getloginStatus = null;

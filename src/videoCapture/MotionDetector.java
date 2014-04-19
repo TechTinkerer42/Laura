@@ -1,5 +1,7 @@
 package videoCapture;
 
+import imageanalysis.MatToBufferedImage;
+
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,7 +13,6 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
-import examples.MatToBufferedImage;
 
 public class MotionDetector extends Snapshot {
 	private static final int framerate = 5;

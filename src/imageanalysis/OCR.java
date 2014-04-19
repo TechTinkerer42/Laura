@@ -1,6 +1,7 @@
-package examples;
+package imageanalysis;
 
 import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.AnnotatedElement;
@@ -36,12 +37,52 @@ public class OCR extends Snapshot{
 	
 	public static int charSizeW = 40;
 	public static int charSizeH = 50;
+	private static final String trainingfolder = "train/characters/";
 	
-	public OCR(){
+	
+	
+	public OCR() throws IOException{
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 		charSizeW = 40;
 		charSizeH = 50;
-
+		trainTheMachine();
+		
+	}
+	
+	public void trainTheMachine() throws IOException{
+		//initiate OCR training
+		OCR.getTrainingFiles(trainingfolder);
+		OCR.trainANN();
+		
+		System.out.println("training done");
+	
+	}
+	
+	public ArrayList<Character> getPlateCharacter(BufferedImage img){
+		System.out.println("img" + img.toString());
+		MatToBufferedImage conv = new MatToBufferedImage();
+		Mat src = conv.getMatFromImage(img);
+		System.out.println("src " + src.toString());
+		ArrayList<Mat> contours = new ArrayList<Mat>();
+		ArrayList<Character> characters = new ArrayList<Character>();
+		try {
+			contours = OCR.SketchContours(src);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		for(Mat contour : contours){
+			System.out.println("contours " + contour.toString());
+			char character = OCR.GetCharacter(contour);
+			characters.add(character);
+		}
+		
+		return characters;
+//		
+//		for(char character : characters){
+//			System.out.print(character);
+//		}
 	}
 	
 	/**
@@ -61,7 +102,7 @@ public class OCR extends Snapshot{
 		ArrayList<Mat> characters = new ArrayList<Mat>();
 		
 		//img.convertTo(img, CvType.CV_8UC1);
-		Imgproc.cvtColor(img, img_threshold, Imgproc.COLOR_RGB2GRAY);
+		//Imgproc.cvtColor(img, img_threshold, Imgproc.COLOR_RGB2GRAY);
 		Mat detected = new Mat();
 		
 		Imgproc.threshold(img_threshold, img_threshold, 120, 255, Imgproc.THRESH_BINARY);
@@ -70,10 +111,13 @@ public class OCR extends Snapshot{
 		//Imgproc.morphologyEx(img_morph, img_morph, 3, morphelem);
 		//img_morph.copyTo(img_contours);
 		img_threshold.copyTo(img_contours);
-		displayImage(img_contours, "img_contours");
+		//displayImage(img_contours, "img_contours");
 		
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
 		contours = segmentation(img_contours);
+		if(contours.isEmpty()){
+			return characters;
+		}
 		img_threshold.copyTo(detected);
 		Imgproc.cvtColor(detected, detected, Imgproc.COLOR_GRAY2RGB);
 		
@@ -125,9 +169,13 @@ public class OCR extends Snapshot{
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
 		//Imgproc.threshold(img, threshold, 60, 255, Imgproc.THRESH_BINARY);
 		img.copyTo(img_contours);
-		Imgproc.findContours(img_contours, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE);	//new Mat() as a dummy mat for optional Mat
+		if(!img_contours.empty()){
+			Imgproc.findContours(img_contours, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_NONE);	//new Mat() as a dummy mat for optional Mat
 		
-		return contours;	
+			return contours;
+		}else{
+			return contours;
+		}
 	}
 	
 	public static boolean verifyplatesize(Mat src)

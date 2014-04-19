@@ -1,4 +1,4 @@
-package examples;
+package imageanalysis;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -20,8 +20,8 @@ import org.opencv.imgproc.Imgproc;
 public class Preprocess extends Snapshot{
 	
 	private static BufferedImage img;
-	private static String extension = ".jpg";
-	private static String filename = "car7336";
+//	private static String extension = ".jpg";
+//	private static String filename = "car7336";
 	private static final int numberofcandidates = 3;
 	private static final String readfolder = "images/";
 	private static final String savefolder = "images/results/";
@@ -68,20 +68,25 @@ public class Preprocess extends Snapshot{
 //		System.out.println("\n\n");
 //	}
 	
-	public static void main(String args[]) throws IOException {
+	public static BufferedImage run(String filepath) throws IOException {
+		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 		svm = new SVMachine();
 		svm.getTrainingfiles(savefolder + "possibleplates/");
 		svm.init();
 		
-		Writer writer = new Writer(savefolder + filename + ".txt");
-		if(writerOn)	writer = new Writer(savefolder + "/" + filename + "/" + filename + ".txt");	//for quick generating log files
-		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+		//Writer writer = new Writer(savefolder + filepath + ".txt");
+		
+		//if(writerOn)	writer = new Writer(savefolder + "/" + filepath + "/" + filepath + ".txt");	//for quick generating log files
+		
 		MatToBufferedImage conv = new MatToBufferedImage();
 		
-		Mat source = Highgui.imread(readfolder + filename + extension);
+		//Mat source = Highgui.imread(readfolder + filename + extension);
+		Mat source = Highgui.imread(filepath);
 		
 		//Imgproc.resize(source, source, new Size(source.width(), source.height()));
 		Imgproc.resize(source, source, new Size(source.width()*0.2, source.height()*0.2));
+		//displayImage(source, "original image");
+		
 		Mat processed = new Mat(source.width(), source.height(), CvType.CV_64FC2);
 		Coordinates[] ycoords = new Coordinates[2];//0 is ypeak, 1 is yband
 		Coordinates[] xcoords = new Coordinates[2];//0 is xpeak, 1 is xband
@@ -90,20 +95,20 @@ public class Preprocess extends Snapshot{
 		//Preprocess image
 		vertProcess(source, processed, 150);
 		img = conv.getImage(processed);
-		System.out.println("original image");	if(writerOn)	if(writerOn)	writer.writeln("original image");//for quick generating log files
-		displayImage(source, new Coordinates(0, source.width()), new Coordinates(0, source.height()), "Original Image", filename);
+		System.out.println("original image");	//if(writerOn)	writer.writeln("original image");//for quick generating log files
+		//displayImage(source, new Coordinates(0, source.width()), new Coordinates(0, source.height()), "Original Image", filename);
 		
 
 		
 		//Vertical Projection histogram & Image
-		if(writerOn)	writer.writeln("================   VERTICAL PROJECTION  ============");	//for quick generating log files
-		if(writerOn)	writer.writeln("0");
+		//if(writerOn)	writer.writeln("================   VERTICAL PROJECTION  ============");	//for quick generating log files
+		//if(writerOn)	writer.writeln("0");
 		System.out.println("================   VERTICAL PROJECTION  ============");
 		System.out.println("0");
 		ycoords = displayHistogram(img, "Vertical Projection Histogram", "vertical", 0.55);
-		displayImage(source, new Coordinates(0, source.width()), ycoords[1], "vertical projection 0th", filename);
+		//displayImage(source, new Coordinates(0, source.width()), ycoords[1], "vertical projection 0th", filename);
 		Mat band = source.submat(ycoords[1].getX(), ycoords[1].getY(), 0, source.width());
-		if(bands.add(band))	System.out.println("band added");if(writerOn)	writer.writeln("band added\n\n");
+		if(bands.add(band))	System.out.println("band added");//if(writerOn)	writer.writeln("band added\n\n");
 		System.out.print("\n\n");
 		
 		
@@ -114,9 +119,9 @@ public class Preprocess extends Snapshot{
 				Coordinates[] coords = displayHistogram(img, "Vertical Projection Histogram " + i + "th", "vertical", 0.55, i);
 				band = source.submat(coords[1].getX(), coords[1].getY(), 0, source.width());
 				if(bands.add(band)){
-					System.out.println("band added");writer.writeln("band added \n\n");
+					System.out.println("band added");//writer.writeln("band added \n\n");
 				}
-				displayImage(source, new Coordinates(0, source.width()), coords[1], "vertical projection " + i + "th", filename);
+				//displayImage(source, new Coordinates(0, source.width()), coords[1], "vertical projection " + i + "th", filename);
 				System.out.print("\n\n");
 			}
 
@@ -130,18 +135,19 @@ public class Preprocess extends Snapshot{
 		
 		if(it.hasNext()){
 			int count = 1;
-			if(writerOn)	writer.writeln("================ HORIZONTAL PROJECTION  ===============");
+			//if(writerOn)	writer.writeln("================ HORIZONTAL PROJECTION  ===============");
 			System.out.println("================ HORIZONTAL PROJECTION  ===============");
 			while(it.hasNext()){
 				horizontal = (Mat) it.next();
 				horiProcess(horizontal, processed, 150);
 				img = conv.getImage(processed);
 				xcoords = displayHistogram(img, "Horizontal Projection " + count + "th" + " Histogram", "horizontal", 0.1);
-				displayImage(horizontal, xcoords[1], new Coordinates(0,horizontal.height()), "horizontal projection " + count + "th", filename);
+				//displayImage(horizontal, xcoords[1], new Coordinates(0,horizontal.height()), "horizontal projection " + count + "th", filename);
 				Mat possibleplate = horizontal.submat(0, horizontal.height(), xcoords[1].getX(), xcoords[1].getY());
+				displayImage(possibleplate, "horizontal projection " + count + "th");
 				System.out.print(getMatDetail(possibleplate)); 
-				if(writerOn)	writer.writeln(getMatDetail(possibleplate));
-				if(writerOn)	writer.writeln("The cropped image is " + verifySizes(possibleplate) + " possible plate.\n\n" );
+				//if(writerOn)	writer.writeln(getMatDetail(possibleplate));
+				//if(writerOn)	writer.writeln("The cropped image is " + verifySizes(possibleplate) + " possible plate.\n\n" );
 				System.out.println("The cropped image is " + verifySizes(possibleplate) + " possible plate" + "\n\n");
 				if(verifySizes(possibleplate))	possibleplates.add(possibleplate);
 				count++;
@@ -151,10 +157,10 @@ public class Preprocess extends Snapshot{
 			horiProcess(horizontal, processed, 150);
 			img = conv.getImage(processed);
 			xcoords = displayHistogram(img, "Horizontal Projection Histogram", "horizontal", 0.1);
-			displayImage(horizontal, xcoords[1], new Coordinates(0,horizontal.height()), "horizontal projection", filename);
+			//displayImage(horizontal, xcoords[1], new Coordinates(0,horizontal.height()), "horizontal projection", filename);
 			Mat possibleplate = horizontal.submat(0, horizontal.height(), xcoords[1].getX(), xcoords[1].getY());
-			if(writerOn)	writer.writeln(getMatDetail(possibleplate));
-			if(writerOn)	writer.writeln("The cropped image is " + verifySizes(possibleplate) + " possible plate.\n\n" );
+			//if(writerOn)	writer.writeln(getMatDetail(possibleplate));
+			//if(writerOn)	writer.writeln("The cropped image is " + verifySizes(possibleplate) + " possible plate.\n\n" );
 			System.out.print(getMatDetail(possibleplate));
 			System.out.println("The cropped image is " + verifySizes(possibleplate) + " possible plate" + "\n\n");
 			if(verifySizes(possibleplate)){
@@ -163,7 +169,7 @@ public class Preprocess extends Snapshot{
 		}
 		
 		if(possibleplates.size() == 0){
-			if(writerOn)	writer.writeln("no possible plate found!");
+			//if(writerOn)	writer.writeln("no possible plate found!");
 			System.out.println("No possible plate found!\n\n");
 			noplate++;
 		}else{
@@ -175,17 +181,22 @@ public class Preprocess extends Snapshot{
 					plate = resizePossiblePlate(plate);
 					possibleplates.set(i, plate);
 					System.out.println("possible plate no " + (i+1) + "\n");
-					displayImage(plate, filename + "possible plate no " + (i+1), true, "plates");
+					//displayImage(plate, filename + "possible plate no " + (i+1), true, "plates");
+					//displayImage(plate, "possibleplate");
 					System.out.println(getMatDetail(plate));
 					plate = plate.reshape(1,1);
 					plate.convertTo(plate, CvType.CV_32FC1);
 					System.out.println(plate.toString());
 					
 					System.out.println("Support Vector Machine prediction found : " + svm.predict(plate));
-					if(writerOn)	writer.writeln("Support Vector Machine prediction found : " + svm.predict(plate));
+					//if(writerOn)	writer.writeln("Support Vector Machine prediction found : " + svm.predict(plate));
 					if(svm.predict(plate)){
-						System.out.println("Plate found! \n"); if(writerOn) writer.writeln("Plate found! \n");
+						
+						System.out.println("Plate found! \n");// if(writerOn) writer.writeln("Plate found! \n");
 						isplate++;
+						BufferedImage result = conv.getImage(possibleplates.get(i));
+						
+						return result;
 					}else{
 						notplate++;
 					}
@@ -195,9 +206,14 @@ public class Preprocess extends Snapshot{
 		System.out.println("total successful captures with possible plates are " + haveplate + "/ " + (haveplate+noplate) + ",\n while no successful possible plates are " + noplate + "/" + (haveplate+noplate));
 		System.out.println("\n\n");
 		
-		writer.closefile();
+	//	writer.closefile();
 		bands.clear();
 		possibleplates.clear();
+		//return a blank image
+		BufferedImage blank = new BufferedImage(144,33,BufferedImage.TYPE_INT_RGB );
+		
+		return blank;
+		
 	}
 	
 	private static Mat vertProcess(Mat src, Mat dst, double Threshold) throws IOException{
@@ -210,7 +226,7 @@ public class Preprocess extends Snapshot{
 		Imgproc.threshold(threshold, threshold, Threshold, 255, Imgproc.THRESH_OTSU + Imgproc.THRESH_BINARY);
 		morphelem = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(5,5));
 		Imgproc.morphologyEx(threshold, dst, 3, morphelem);
-		displayImage(dst, new Coordinates(0, dst.width()), new Coordinates(0, dst.height()), "processed picture");
+		//displayImage(dst, new Coordinates(0, dst.width()), new Coordinates(0, dst.height()), "processed picture");
 		
 		return dst;
 	}
@@ -222,23 +238,29 @@ public class Preprocess extends Snapshot{
 		Mat threshold = new Mat(src.size(), CvType.CV_8UC1);
 		Imgproc.Sobel(bw, threshold, src.depth(), 0, 2);
 		Imgproc.GaussianBlur(bw, threshold, new Size(5,5), 0);
-		Imgproc.threshold(threshold, threshold, Threshold, 255, Imgproc.THRESH_OTSU + Imgproc.THRESH_BINARY);
+		
+		Imgproc.threshold(threshold, threshold, Threshold, 255, Imgproc.THRESH_OTSU + Imgproc.THRESH_BINARY_INV);
 		morphelem = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(5,5));
 		Imgproc.morphologyEx(threshold, dst, 3, morphelem);
 		//displayImage(dst, new Coordinates(0, dst.width()), new Coordinates(0, dst.height()), "processed picture");
-		
+		displayImage(dst, "image");
 		return dst;
 	}
 	
 	private static Coordinates[] displayHistogram(BufferedImage img, String title, String orientation, double bandthreshold){
 		Coordinates[] coords = new Coordinates[2];	//coords[0] being peak coords, coords[1] being band coords
 		Histogram hist = new Histogram(title, img, orientation);
-		int[] arr = hist.getImgArr();
-		Coordinates peak_coord = hist.getPeakCoord(arr);
+		
+		Coordinates peak_coord;
 		Coordinates band_coord;
 		if(orientation == "vertical"){
+			int[] arr = hist.getImgArr();
+			peak_coord = hist.getPeakCoord(arr);
 			band_coord = hist.getBandCoords(arr, bandthreshold, "vertical");
 		}else{
+			System.out.println("hori");
+			int[] arr = hist.getHoriImgArr(img);
+			peak_coord = hist.getPeakCoord(arr);
 			band_coord = hist.getBandCoords(arr, bandthreshold, "horizontal");
 		}
 		if(peak_coord == null || band_coord == null){
@@ -259,24 +281,36 @@ public class Preprocess extends Snapshot{
 	private static Coordinates[] displayHistogram(BufferedImage img, String title, String orientation, double bandthreshold, int newPeak){
 		Coordinates[] coords = new Coordinates[2];//coords[0] being peak coords, coords[1] being band coords
 		Histogram hist = new Histogram(title, img, orientation);
-		int[] arr = hist.getImgArr();
+
+		int[] arr;
+		if(orientation == "vertical"){
+			arr = hist.getImgArr();}
+		else{
+			arr = hist.getHoriImgArr(img);}
+		
 		for(int i = 0; i < newPeak; i++){
-			Coordinates peak = hist.getPeakCoord(arr);
+			Coordinates peak;
 			Coordinates band;
+			
 			if(orientation == "vertical"){
+				peak = hist.getPeakCoord(arr);
 				band = hist.getBandCoords(arr, bandthreshold, "vertical");
 			}else{
+				System.out.println("hori");
+				peak = hist.getPeakCoord(arr);
 				band = hist.getBandCoords(arr, bandthreshold, "horizontal");
 			}
 			System.out.println("band to be zeroized: " + band.toString());
 			arr = clearPeak(arr, band);
 			System.out.println("band Zeroized");
 		}
+		
 		Coordinates peak_coord = hist.getPeakCoord(arr);
 		Coordinates band_coord;
 		if(orientation == "vertical"){
 			band_coord = hist.getBandCoords(arr, bandthreshold, "vertical");
 		}else{
+			System.out.println("hori");
 			band_coord = hist.getBandCoords(arr, bandthreshold, "horizontal");
 		}
 		if(peak_coord == null || band_coord == null){

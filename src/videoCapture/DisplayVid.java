@@ -1,4 +1,6 @@
 package videoCapture;
+import imageanalysis.MatToBufferedImage;
+
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -19,7 +21,6 @@ import org.opencv.highgui.VideoCapture;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.video.Video;
 
-import examples.MatToBufferedImage;
 
 
 

@@ -2,7 +2,11 @@ package GUI;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Font;
+import java.awt.event.ActionListener;
 import java.net.URL;
+
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.media.*;
 
@@ -10,10 +14,17 @@ import javax.media.*;
 
 public class Vid extends JFrame
 {
+	private JButton Browse;
     public Vid()
     {
         setLayout(new BorderLayout());
-//
+        
+        Browse = new JButton("Browse");
+		Browse.setBounds(10, 557, 86, 28);
+		Browse.setFont(new Font("Gabriola", Font.PLAIN, 16));
+		getContentPane().add(Browse);
+		
+		
 //        //file you want to play
 //      URL mediaURL = C:\\Users\\Jay Jay\\Downloads\\2.broke.girls.219.hdtv-lol_wso;
 //        //create the media player with the media url
@@ -24,4 +35,8 @@ public class Vid extends JFrame
 //        add(video,BorderLayout.CENTER);
 //        add(controls,BorderLayout.SOUTH);
     }
+    
+	void addBrowseListener(ActionListener listenForBrowseButton){
+		Browse.addActionListener(listenForBrowseButton); 
+			}
 }

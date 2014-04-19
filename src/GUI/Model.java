@@ -10,15 +10,12 @@ public class Model {
 	String time;
 	
 	public String getDate() {
-		
 		Calendar javaCalendar = null;
 		date = "";
-
 		javaCalendar = Calendar.getInstance();
+		date = javaCalendar.get(Calendar.DATE) + "/" + (javaCalendar.get(Calendar.MONTH) + 1) + "/" + javaCalendar.get(Calendar.YEAR);
 
-	date = javaCalendar.get(Calendar.DATE) + "/" + (javaCalendar.get(Calendar.MONTH) + 1) + "/" + javaCalendar.get(Calendar.YEAR);
-
-	return date;
+		return date;
 	}
 
 	public void setDate(String date){
@@ -27,18 +24,12 @@ public class Model {
 
 	
 	public String getTime() {
-		
 		Calendar javaCalendar = null;
 		time = "";
-
-		
-		javaCalendar = Calendar.getInstance();
-		
+		javaCalendar = Calendar.getInstance();		
 		time = javaCalendar.get(Calendar.HOUR) + ":" +javaCalendar.get(Calendar.MINUTE) + ":" + javaCalendar.get(Calendar.SECOND);
 		
 		return time;
-		
-		
 	}
 	
 	public void settime(String time){

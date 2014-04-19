@@ -1,4 +1,4 @@
-package examples;
+package imageanalysis;
 
 import java.awt.Image;
 import java.awt.image.BufferedImage;
@@ -128,7 +128,8 @@ public class Histogram extends ApplicationFrame {
 				 sum += (img.getRGB(x, y)  & 0x00ff0000 )>> 16;
 			 }
 			 double avg = ((double) sum/ (double)total)*100;
-			 width[x] = (int) avg;	//assign summation value in percentage to that height's row
+			 width[x] = (int) avg;	
+			 //assign summation value in percentage to that height's row
 			 sum = 0;			//restart value
 		 }
 		 
@@ -167,6 +168,52 @@ public class Histogram extends ApplicationFrame {
 	  XYPlot plot = (XYPlot) chart.getPlot();
 	  return chart;    
 	 }
+	 
+	 public int[] getHoriImgArr(BufferedImage image){
+		   BufferedImage img = image;
+
+			 int[] width = new int[img.getWidth()];
+			 int total = img.getHeight()*255;
+			 int sum = 0;
+
+			 //from first row to bottom row
+			 for(int x = 0; x < img.getWidth()-1; x++){
+				 for(int y=0; y<img.getHeight()-1; y++){
+					 //get pixel value and add into sum
+					 sum += (img.getRGB(x, y)  & 0x00ff0000 )>> 16;
+				 }
+				 double avg = ((double) sum/ (double)total)*100;
+				 width[x] = (int) avg;	//assign summation value in percentage to that height's row
+				 sum = 0;			//restart value
+			 }
+			 
+
+		   return width;
+	   }
+	   
+	   public int[] getVertImgArr(BufferedImage image){
+		   BufferedImage img = image;
+		   
+			 
+			 int[] height = new int[img.getHeight()];
+			 int total = img.getWidth()*255;
+			 int sum = 0;
+
+			 //from top row to bottom row
+			 for(int y = img.getHeight()-1; y>0; y--){
+				 for(int x=0; x<img.getWidth()-1; x++){
+					 //get pixel value and add into sum
+					 sum += (img.getRGB(x, y)  & 0x00ff0000 )>> 16;
+				 }
+				 double avg = ((double) sum/ (double)total)*100;
+				 height[y] = (int) avg;	//assign summation value in percentage to that height's row
+				 sum = 0;			//restart value
+			 }
+			
+			
+			
+			return height;
+	   }
 	 
 	 public int getMaxVal(int[] arr){
 		 int max = 0;
@@ -213,7 +260,8 @@ public class Histogram extends ApplicationFrame {
 	  * @param threshold	The threshold value to determine where to find the Band's sides
 	  * @return	returns a Coordinate type with its X as Yb0 of a band and its Y as Yb1 of a band
 	  */
-	 public Coordinates getBandCoords(int[] yValues, double threshold, String orientation){
+	 public Coordinates getBandCoords(int[] values, double threshold, String orientation){
+		 int[] yValues = values;
 		 Coordinates Peak_coord = getPeakCoord(yValues);
 		 Coordinates band_coord;
 		 int Yb0_value = 0;
@@ -221,29 +269,56 @@ public class Histogram extends ApplicationFrame {
 		 int Yb0 = 0;
 		 int Yb1 = 0;
 		 
-		 //find for Yb0 value, and get its Y coordinate
-		 for(int y = Peak_coord.getY(); y>0; y--){
-			 if(yValues[y] < threshold*yValues[Peak_coord.getY()]){
-				 
+		 if(orientation == "vertical"){
+			 //find for Yb0 value, and get its Y coordinate
+			 for(int y = Peak_coord.getY(); y>0; y--){
+				 if(yValues[y] < threshold*yValues[Peak_coord.getY()]){
+					 
+						 Yb0_value = yValues[y];
+						 Yb0 = Math.max(0, y);
+						// System.out.println("Y value is " + Yb0_value + ", Yb0 is " + Yb0);
+						 break;
+				 }
+			 }
+			 
+			 //find for Yb1 value, and get its Y coordinate
+			 for(int y = Peak_coord.getY(); y<yValues.length; y++){
+				 if(yValues[y] < threshold*yValues[Peak_coord.getY()] ){	
+						 Yb1_value = yValues[y];
+						 Yb1 = Math.min(yValues.length, y);
+						// System.out.println("Y value is " + Yb1_value + ", Yb1 is " + Yb1);
+						 break;
+				 }
+				 Yb1 = yValues.length-1;
+			 }
+			 
+			 band_coord = new Coordinates(Yb0, Yb1);
+		 }else{//horizontal
+			 System.out.println("horizontal");
+			 //find for Yb0 value, start from middle go towards left
+			 for(int y = yValues.length/2; y > 0; y--){
+				 if(yValues[y] == 0){
+					 System.out.println("y value is " + yValues[y]);
 					 Yb0_value = yValues[y];
-					 Yb0 = Math.max(0, y);
-					// System.out.println("Y value is " + Yb0_value + ", Yb0 is " + Yb0);
+					 Yb0 = y;
 					 break;
+				 }
 			 }
-		 }
-		 
-		 //find for Yb1 value, and get its Y coordinate
-		 for(int y = Peak_coord.getY(); y<yValues.length; y++){
-			 if(yValues[y] < threshold*yValues[Peak_coord.getY()] ){	
+			 
+			 //find for Yb1 value, start from middle go towards right
+			 for(int y = yValues.length/2; y < yValues.length; y++){
+				 if(yValues[y] == 0){
 					 Yb1_value = yValues[y];
-					 Yb1 = Math.min(yValues.length, y);
-					// System.out.println("Y value is " + Yb1_value + ", Yb1 is " + Yb1);
+					 Yb1 = y;
 					 break;
+				 }
 			 }
-			 Yb1 = yValues.length-1;
+			 
+			 band_coord = new Coordinates(Yb0, Yb1);
+			 return band_coord;
 		 }
 		 
-		 band_coord = new Coordinates(Yb0, Yb1);
+		 
 		// System.out.println(band_coord.toString());	for debugging purposes
 		 int diff = band_coord.getY() - band_coord.getX();
 		 int NewYb0 = Math.max(0, band_coord.getX() - (int) (0.2*diff));
